@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发货费用分摊表</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36D399',
+            neutral: '#F9FAFB',
+            'neutral-dark': '#1F2937',
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <script>
+    let supabase; // Declare supabase as a global variable
+  </script>
+</head>
+<body class="bg-gray-50 font-inter text-neutral-dark">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 顶部操作栏 -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div>
+        <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-primary">发货费用分摊表</h1>
+        <p class="text-gray-500 mt-1">高效管理和计算每日发货费用</p>
+      </div>
+      
+      <div class="flex flex-wrap gap-3 w-full md:w-auto">
+        <button id="addRowBtn" class="bg-secondary text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg">
+          <i class="fa fa-plus mr-2"></i> 添加商户
+        </button>
+        <button id="downloadExcelBtn" class="bg-primary text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg">
+          <i class="fa fa-download mr-2"></i> 导出Excel
+        </button>
+        <button id="calculateBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg">
+          <i class="fa fa-calculator mr-2"></i> 重新计算
+        </button>
+        <button id="saveDataBtn" class="bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg">
+            <i class="fa fa-save mr-2"></i> 保存数据
+        </button>
+        <a href="query.html" target="_blank" class="bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg">
+            <i class="fa fa-search mr-2"></i> 数据查询
+        </a>
+      </div>
+    </div>
+    
+    <!-- 顶部汇总信息 -->
+    <div class="bg-white rounded-xl p-6 mb-8" style="box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4">
+        <!-- Col 1: ID & Pricing -->
+        <div class="space-y-3">
+          <div class="flex items-center">
+            <label for="dateInput" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">日期:</label>
+            <input type="date" id="dateInput" value="2025-05-29" 
+                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+          </div>
+          <div class="flex items-center">
+            <label for="trackingNumber" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应快递单号:</label>
+            <input type="text" id="trackingNumber" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+          </div>
+          <div class="flex items-center">
+            <label for="shipmentId" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应货件ID:</label>
+            <input type="text" id="shipmentId" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+          </div>
+           <div class="flex items-center">
+            <label for="freightUnitPrice" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">运费单价:</label>
+            <input type="number" id="freightUnitPrice" value="68" min="0" step="0.01"
+                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-24 text-right">
+            <span class="ml-2">元/kg</span>
+          </div>
+        </div>
+        
+        <!-- Col 2: Weights -->
+        <div class="space-y-3">
+          <div class="flex items-center">
+            <label for="totalSettleWeight" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">总结算重量:</label>
+            <input type="number" id="totalSettleWeight" step="0.001"
+                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full text-right font-semibold bg-yellow-100">
+            <span class="ml-2">kg</span>
+          </div>
+           <div class="flex items-center">
+            <label for="actualWeightWithBox" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">实重+纸箱:</label>
+            <input type="number" id="actualWeightWithBox" step="0.001"
+                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full text-right font-semibold bg-yellow-100">
+            <span class="ml-2">kg</span>
+          </div>
+          <div class="flex items-center">
+            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">货物实重总和:</label>
+            <span id="actualWeightSum" class="font-semibold text-gray-800">8.220 kg</span>
+          </div>
+          <div class="flex items-center">
+            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">抛出:</label>
+            <span id="throwOut" class="font-semibold text-gray-800">3.556 kg</span>
+          </div>
+        </div>
+        
+        <!-- Col 3: Summary -->
+        <div class="space-y-3">
+          <div class="flex items-center">
+            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">今日运费:</label>
+            <span id="totalFreight" class="font-semibold text-lg text-primary">¥893.04</span>
+          </div>
+           <div class="flex items-center">
+            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">纸箱重量:</label>
+            <span id="boxWeight" class="font-semibold text-gray-800">1.357 kg</span>
+          </div>
+          <div class="flex items-center">
+            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">商户数量:</label>
+            <span id="merchantCount" class="font-semibold text-gray-800">4</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 数据可视化 -->
+      <div class="mt-8">
+        <h3 class="text-lg font-semibold mb-4">费用分布</h3>
+        <div class="h-64">
+          <canvas id="distributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 商户明细表格 -->
+    <div class="bg-white rounded-xl overflow-hidden mb-8" style="box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-gray-50 text-left">
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">序号</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">商户</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">件数</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">货物实重 (kg)</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">比例</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">占纸箱 (kg)</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">占抛出 (kg)</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">结算重量 (kg)</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">合计金额 (元)</th>
+              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">操作</th>
+            </tr>
+          </thead>
+          <tbody id="detailTable">
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+              <td class="px-2 py-3 sm:px-6 sm:py-4">1</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="3.110" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">37.84%</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.513" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1.345" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">4.969</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">337.88</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+              <td class="px-2 py-3 sm:px-6 sm:py-4">2</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.480" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">5.84%</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.079" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.208" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0.767</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">52.15</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+              <td class="px-2 py-3 sm:px-6 sm:py-4">3</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1.070" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">13.02%</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.177" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.463" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">1.710</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">116.25</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+              <td class="px-2 py-3 sm:px-6 sm:py-4">4</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="3.560" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">43.31%</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="0.588" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <input type="number" value="1.540" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              </td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">5.688</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">386.77</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">
+                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr class="bg-gray-50 font-semibold">
+              <td colspan="2" class="px-2 py-3 sm:px-6 sm:py-4 text-right">合计:</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-pieces">4</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-actual-weight">8.220</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4">100.00%</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-box-weight">1.357</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-throw">3.556</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-settle-weight font-bold">13.133</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-amount font-bold">893.04</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="text-center text-gray-500 text-sm py-4">
+      <p>发货费用分摊表 &copy; 2025</p>
+    </footer>
+  </div>
+
+  <audio id="notificationSound" src="https://www.orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3" preload="auto"></audio>
+
+  <script>
+    // 初始化图表
+    let distributionChart;
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+      // Replace with your Supabase project URL and anon key
+      const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co'; 
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzOTY1NDAsImV4cCI6MjA2NDk3MjU0MH0.xHTFEpbGKbzh1wUCsnYm8swqjDoNA1k0rPU5lkICYRE';
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // 初始化图表
+      initChart();
+      
+      // 绑定事件
+      document.getElementById('addRowBtn').addEventListener('click', () => addNewRow());
+      document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
+      document.getElementById('calculateBtn').addEventListener('click', resetForm);
+      document.getElementById('saveDataBtn').addEventListener('click', saveData);
+
+      document.getElementById('freightUnitPrice').addEventListener('change', calculateAll);
+      document.getElementById('totalSettleWeight').addEventListener('change', calculateAll);
+      document.getElementById('actualWeightWithBox').addEventListener('change', calculateAll);
+      document.getElementById('dateInput').addEventListener('change', loadData);
+      
+      // 为输入框绑定事件
+      bindInputEvents();
+      
+      // 初始化时加载当天数据
+      loadData();
+    });
+    
+    // 初始化图表
+    function initChart() {
+      const ctx = document.getElementById('distributionChart').getContext('2d');
+      const isMobile = window.innerWidth < 768;
+      
+      // 获取数据
+      const labels = Array.from(document.querySelectorAll('.merchant-input')).map(input => input.value);
+      const amounts = Array.from(document.querySelectorAll('.amount-cell')).map(cell => parseFloat(cell.textContent));
+      
+      // 创建图表
+      distributionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: amounts,
+            backgroundColor: [
+              '#165DFF', '#36D399', '#F87272', '#A78BFA',
+              '#FBBF24', '#FB7185', '#60A5FA', '#818CF8'
+            ],
+            borderWidth: 1,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: isMobile ? 'top' : 'right',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ¥${value.toFixed(2)} (${percentage}%)`;
+                }
+              }
+            }
+          },
+          animation: {
+            animateScale: true,
+            animateRotate: true
+          }
+        }
+      });
+
+      // 监听窗口大小变化以调整图表
+      window.addEventListener('resize', () => {
+        const newIsMobile = window.innerWidth < 768;
+        const newPosition = newIsMobile ? 'top' : 'right';
+        if (distributionChart && distributionChart.options.plugins.legend.position !== newPosition) {
+          distributionChart.options.plugins.legend.position = newPosition;
+          distributionChart.update();
+        }
+      });
+    }
+    
+    // 绑定输入框事件
+    function bindInputEvents() {
+      // 为所有输入框绑定事件
+      document.querySelectorAll('.weight-input, .box-input, .throw-input, .pieces-input').forEach(input => {
+        input.addEventListener('change', calculateAll);
+      });
+      
+      // 为删除按钮绑定事件
+      document.querySelectorAll('.delete-row').forEach(button => {
+        button.addEventListener('click', function() {
+          const row = this.closest('tr');
+          if (document.querySelectorAll('#detailTable tr').length > 2) { // 至少保留合计行
+            row.remove();
+            renumberRows();
+            calculateAll();
+          } else {
+            alert('至少保留一条商户记录');
+          }
+        });
+      });
+    }
+    
+    // 添加新行
+    function addNewRow(name = '新商户', weight = '0', pieces = '1', shouldCalculate = true) {
+      const tbody = document.getElementById('detailTable');
+      
+      const newRow = document.createElement('tr');
+      newRow.className = 'border-b hover:bg-gray-50 transition-colors';
+      newRow.innerHTML = `
+        <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+        </td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <input type="number" value="${pieces}" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+        </td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <input type="number" value="${weight}" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+        </td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">0.00%</td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <input type="number" value="0" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+        </td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <input type="number" value="0" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+        </td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0</td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">0</td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4">
+          <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      `;
+      
+      // 在合计行前插入新行
+      const totalRow = tbody.querySelector('.bg-gray-50');
+      tbody.insertBefore(newRow, totalRow);
+      
+      // 重新编号
+      renumberRows();
+      
+      // 绑定新行的事件
+      bindInputEvents();
+      
+      if (shouldCalculate) {
+        // 聚焦到新行的商户名称输入框
+        newRow.querySelector('.merchant-input').focus();
+        // 重新计算
+        calculateAll();
+      }
+    }
+    
+    // 重新编号行
+    function renumberRows() {
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      rows.forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+      });
+      
+      // 更新商户数量
+      document.getElementById('merchantCount').textContent = rows.length;
+    }
+    
+    /**
+     * 保存当前数据到 Supabase 数据库。
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function saveData() {
+        const date = document.getElementById('dateInput').value;
+        if (!date) {
+            Swal.fire('错误', '请先选择一个日期！', 'error');
+            return;
+        }
+
+        const dataToSave = {
+            date: date, // Add date to the object for Supabase
+            freight_unit_price: parseFloat(document.getElementById('freightUnitPrice').value) || 0,
+            total_settle_weight: parseFloat(document.getElementById('totalSettleWeight').value) || 0,
+            actual_weight_with_box: parseFloat(document.getElementById('actualWeightWithBox').value) || 0,
+            tracking_number: document.getElementById('trackingNumber').value,
+            shipment_id: document.getElementById('shipmentId').value,
+            merchants: []
+        };
+
+        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+        rows.forEach(row => {
+            dataToSave.merchants.push({
+                name: row.querySelector('.merchant-input').value,
+                weight: parseFloat(row.querySelector('.weight-input').value) || 0,
+                pieces: parseInt(row.querySelector('.pieces-input').value, 10) || 0
+            });
+        });
+
+        try {
+            const { data, error } = await supabase
+                .from('shipping_costs')
+                .upsert([dataToSave], { onConflict: 'date' }); // Upsert based on date
+
+            if (error) {
+                console.error('保存数据到 Supabase 失败:', error.message);
+                Swal.fire('错误', '保存数据失败: ' + error.message, 'error');
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: '保存成功',
+                    text: `日期 ${date} 的数据已成功保存到云端。`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        } catch (e) {
+            console.error('保存数据时发生异常:', e.message);
+            Swal.fire('错误', '保存数据时发生异常: ' + e.message, 'error');
+        }
+    }
+
+    /**
+     * 从 Supabase 数据库加载数据。
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function loadData() {
+        const date = document.getElementById('dateInput').value;
+        if (!date) return;
+
+        const tbody = document.getElementById('detailTable');
+        const rows = tbody.querySelectorAll('tr:not(.bg-gray-50)');
+        rows.forEach(row => row.remove()); // Clear existing rows
+
+        try {
+            const { data, error } = await supabase
+                .from('shipping_costs')
+                .select('*')
+                .eq('date', date)
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+                console.error('从 Supabase 加载数据失败:', error.message);
+                Swal.fire('错误', '加载数据失败: ' + error.message, 'error');
+                resetFormInputs(); // Reset inputs if loading fails
+                return;
+            }
+
+            if (data) {
+                document.getElementById('freightUnitPrice').value = data.freight_unit_price || '68';
+                document.getElementById('totalSettleWeight').value = data.total_settle_weight || '';
+                document.getElementById('actualWeightWithBox').value = data.actual_weight_with_box || '';
+                document.getElementById('trackingNumber').value = data.tracking_number || '';
+                document.getElementById('shipmentId').value = data.shipment_id || '';
+
+                if (data.merchants && data.merchants.length > 0) {
+                    data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
+                } else {
+                    addNewRow('新商户', '0', '1', false);
+                }
+            } else {
+                // No data found for the date, reset to initial state
+                resetFormInputs();
+                addNewRow('新商户', '0', '1', false);
+            }
+        } catch (e) {
+            console.error('加载数据时发生异常:', e.message);
+            Swal.fire('错误', '加载数据时发生异常: ' + e.message, 'error');
+            resetFormInputs(); // Reset inputs if loading fails
+        } finally {
+            calculateAll(); // Always recalculate after loading or resetting
+        }
+    }
+
+    /**
+     * 重置表单顶部输入框的值。
+     */
+    function resetFormInputs() {
+        document.getElementById('freightUnitPrice').value = '68';
+        document.getElementById('totalSettleWeight').value = '';
+        document.getElementById('actualWeightWithBox').value = '';
+        document.getElementById('trackingNumber').value = '';
+        document.getElementById('shipmentId').value = '';
+    }
+
+    /**
+     * 清除所有商户参数以供重新输入，并显示一个美观的确认对话框。
+     */
+    function resetForm() {
+      // 播放提示音
+      document.getElementById('notificationSound').play().catch(e => console.error("音频播放失败:", e));
+
+      // 使用SweetAlert2显示自定义对话框
+      Swal.fire({
+        title: '确认操作',
+        text: "您确定要清除所有商户数据吗？此操作将清空所有输入。",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#165DFF', // 匹配主题主色
+        cancelButtonColor: '#d33',
+        confirmButtonText: '是的，全部清除！',
+        cancelButtonText: '取消',
+        customClass: {
+          popup: 'rounded-xl shadow-lg',
+          confirmButton: 'btn-hover',
+          cancelButton: 'btn-hover'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+          
+          rows.forEach(row => {
+            row.querySelector('.merchant-input').value = '';
+            row.querySelector('.weight-input').value = '0';
+            row.querySelector('.pieces-input').value = '0';
+          });
+
+          // 清除顶部的可手动输入项
+          document.getElementById('trackingNumber').value = '';
+          document.getElementById('shipmentId').value = '';
+          document.getElementById('totalSettleWeight').value = '';
+          document.getElementById('actualWeightWithBox').value = '';
+          
+          // 重新计算以更新所有字段为0或默认状态
+          calculateAll();
+
+          // 显示成功提示
+          Swal.fire({
+            icon: 'success',
+            title: '已清除',
+            text: '所有数据已被清空，您可以重新输入了。',
+            timer: 1500,
+            showConfirmButton: false,
+            customClass: {
+              popup: 'rounded-xl shadow-lg'
+            }
+          });
+        }
+      });
+    }
+    
+    /**
+     * 计算所有数据。
+     * 此函数重新计算页面上的所有财务数据。
+     * 它支持手动输入总结算重量和"实重+纸箱"重量。
+     * 如果手动输入"实重+纸箱"，它将按比例分配纸箱重量到每一行。
+     * 如果手动输入总结算重量，它会根据每个商户的结算重量按比例重新分配总费用。
+     * @param {Event} [event] - 触发计算的事件对象。
+     */
+    function calculateAll(event) {
+      const trigger = event ? event.target : null;
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
+      
+      // 1. Calculate totalActualWeight (sum from table)
+      let totalActualWeight = 0;
+      let totalPieces = 0;
+      rows.forEach(row => {
+          totalActualWeight += parseFloat(row.querySelector('.weight-input').value) || 0;
+          totalPieces += parseInt(row.querySelector('.pieces-input').value, 10) || 0;
+      });
+
+      // 2. Calculate and distribute Box Weight based on the "Actual Weight + Box" input.
+      const actualWeightWithBoxInput = document.getElementById('actualWeightWithBox');
+      const manualActualWeightWithBox = parseFloat(actualWeightWithBoxInput.value) || 0;
+      let totalBoxWeight = manualActualWeightWithBox - totalActualWeight;
+      if (totalBoxWeight < 0) totalBoxWeight = 0;
+
+      rows.forEach(row => {
+          const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
+          const proportion = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * totalBoxWeight : (rows.length > 0 ? totalBoxWeight / rows.length : 0);
+          row.querySelector('.box-input').value = proportion.toFixed(3);
+      });
+      
+      const actualWeightWithBox = totalActualWeight + totalBoxWeight;
+      
+      // 3. Get finalTotalSettleWeight from input. If not provided, it's just actual+box.
+      const totalSettleWeightInput = document.getElementById('totalSettleWeight');
+      let finalTotalSettleWeight = parseFloat(totalSettleWeightInput.value) || actualWeightWithBox;
+      if (parseFloat(totalSettleWeightInput.value) === 0) { // allow 0 input
+        finalTotalSettleWeight = 0;
+      }
+      
+      // If the input was empty and we calculated it, update the input field for clarity.
+      if (!totalSettleWeightInput.value && finalTotalSettleWeight > 0) {
+        totalSettleWeightInput.value = finalTotalSettleWeight.toFixed(3);
+      }
+
+      // 4. Calculate totalThrow and distribute it.
+      let totalThrow = finalTotalSettleWeight - actualWeightWithBox;
+      if (totalThrow < 0) totalThrow = 0;
+
+      rows.forEach(row => {
+          const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
+          const proportion = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * totalThrow : (rows.length > 0 ? totalThrow / rows.length : 0);
+          row.querySelector('.throw-input').value = proportion.toFixed(3);
+      });
+      
+      // 5. Final pass to calculate row values and totals.
+      const rowData = [];
+      let totalSettleWeightFromTable = 0;
+      
+      rows.forEach(row => {
+        const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
+        const boxWeight = parseFloat(row.querySelector('.box-input').value) || 0;
+        const throwWeight = parseFloat(row.querySelector('.throw-input').value) || 0;
+        const settleWeight = actualWeight + boxWeight + throwWeight;
+        
+        rowData.push({ row, actualWeight, settleWeight });
+        totalSettleWeightFromTable += settleWeight;
+      });
+      
+      const totalAmount = finalTotalSettleWeight * freightUnitPrice;
+      
+      rowData.forEach(data => {
+        const { row, actualWeight, settleWeight } = data;
+        
+        const rate = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * 100 : 0;
+        row.querySelector('.rate-cell').textContent = rate.toFixed(2) + '%';
+        
+        let amount = 0;
+        if (totalSettleWeightFromTable > 0) {
+          amount = totalAmount * (settleWeight / totalSettleWeightFromTable);
+        } else if (rowData.length > 0 && totalAmount > 0) {
+          amount = totalAmount / rowData.length;
+        }
+        
+        row.querySelector('.settle-weight-cell').textContent = settleWeight.toFixed(3);
+        row.querySelector('.amount-cell').textContent = amount.toFixed(2);
+      });
+
+      const finalTotalAmountFromTable = rowData.reduce((sum, data) => sum + parseFloat(data.row.querySelector('.amount-cell').textContent), 0);
+
+      document.querySelector('.total-actual-weight').textContent = totalActualWeight.toFixed(3);
+      document.querySelector('.total-pieces').textContent = totalPieces;
+      document.querySelector('.total-box-weight').textContent = totalBoxWeight.toFixed(3);
+      document.querySelector('.total-throw').textContent = totalThrow.toFixed(3);
+      document.querySelector('.total-settle-weight').textContent = totalSettleWeightFromTable.toFixed(3);
+      document.querySelector('.total-amount').textContent = finalTotalAmountFromTable.toFixed(2);
+      
+      document.getElementById('actualWeightSum').textContent = totalActualWeight.toFixed(3) + ' kg';
+      document.getElementById('boxWeight').textContent = totalBoxWeight.toFixed(3) + ' kg';
+      document.getElementById('throwOut').textContent = totalThrow.toFixed(3) + ' kg';
+      document.getElementById('totalFreight').textContent = '¥' + finalTotalAmountFromTable.toFixed(2);
+      
+      updateChart();
+    }
+    
+    // 更新图表
+    function updateChart() {
+      if (distributionChart) {
+        const labels = Array.from(document.querySelectorAll('.merchant-input')).map(input => input.value);
+        const amounts = Array.from(document.querySelectorAll('.amount-cell')).map(cell => parseFloat(cell.textContent));
+        
+        distributionChart.data.labels = labels;
+        distributionChart.data.datasets[0].data = amounts;
+        distributionChart.update();
+      }
+    }
+    
+    // 导出Excel
+    function downloadExcel() {
+      // 创建工作簿
+      const wb = XLSX.utils.book_new();
+      
+      // 创建工作表数据
+      const ws_data = [];
+      
+      // 添加头部信息
+      const now = new Date();
+      const exportDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      ws_data.push([`导出时间: ${exportDateTime}`]);
+
+      const trackingNumber = document.getElementById('trackingNumber').value;
+      const shipmentId = document.getElementById('shipmentId').value;
+      if (trackingNumber) {
+        ws_data.push([`快递单号: ${trackingNumber}`]);
+      }
+      if (shipmentId) {
+        ws_data.push([`货件ID: ${shipmentId}`]);
+      }
+      
+      ws_data.push([]); // 空行用于间隔
+
+      // 添加表头
+      ws_data.push([
+        '序号', '商户', '件数', '货物实重(kg)', '比例(%)', '占纸箱(kg)', 
+        '占抛出(kg)', '结算重量(kg)', '运费单价(元/kg)', '合计金额(元)'
+      ]);
+      
+      // 获取运费单价
+      const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
+      
+      // 添加表格数据
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData = [];
+        
+        // 序号
+        rowData.push(cells[0].textContent);
+        
+        // 商户
+        rowData.push(row.querySelector('.merchant-input').value);
+        
+        // 件数
+        rowData.push(parseInt(row.querySelector('.pieces-input').value, 10) || 0);
+        
+        // 货物实重
+        rowData.push(parseFloat(row.querySelector('.weight-input').value) || 0);
+        
+        // 比例
+        rowData.push(parseFloat(row.querySelector('.rate-cell').textContent) || 0);
+        
+        // 纸箱
+        rowData.push(parseFloat(row.querySelector('.box-input').value) || 0);
+        
+        // 抛出
+        rowData.push(parseFloat(row.querySelector('.throw-input').value) || 0);
+        
+        // 结算重量
+        rowData.push(parseFloat(row.querySelector('.settle-weight-cell').textContent) || 0);
+        
+        // 运费单价
+        rowData.push(freightUnitPrice);
+        
+        // 合计金额
+        rowData.push(parseFloat(row.querySelector('.amount-cell').textContent) || 0);
+        
+        ws_data.push(rowData);
+      });
+      
+      // 创建工作表
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      
+      // 添加工作表到工作簿
+      XLSX.utils.book_append_sheet(wb, ws, "发货费用分摊表");
+      
+      // 获取日期作为文件名
+      const date = document.getElementById('dateInput').value || new Date().toISOString().split('T')[0];
+      const filename = `发货费用分摊表_${date}.xlsx`;
+      
+      // 导出Excel
+      XLSX.writeFile(wb, filename);
+    }
+  </script>
+</body>
+</html>  
