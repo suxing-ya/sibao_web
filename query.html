@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>历史数据查询</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    let supabase; // Declare supabase as a global variable
+  </script>
+  <style>
+    .table-shadow {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-purple-600">历史数据查询</h1>
+        <a href="index.html" class="bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl">
+            <i class="fa fa-arrow-left mr-2"></i> 返回主页
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-xl overflow-hidden table-shadow">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-gray-50 text-left">
+              <th class="px-6 py-4 font-semibold text-gray-600">日期</th>
+              <th class="px-6 py-4 font-semibold text-gray-600">快递单号</th>
+              <th class="px-6 py-4 font-semibold text-gray-600">货件ID</th>
+              <th class="px-6 py-4 font-semibold text-gray-600">总运费 (元)</th>
+              <th class="px-6 py-4 font-semibold text-gray-600">结算重量 (kg)</th>
+              <th class="px-6 py-4 font-semibold text-gray-600">商户详情</th>
+              <th class="px-6 py-4 font-semibold text-gray-600 text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Data will be injected here by script -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Replace with your Supabase project URL and anon key
+      const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Assign to the global variable
+
+      const tbody = document.getElementById('historyTableBody');
+      
+      /**
+       * 从 Supabase 获取所有历史数据并渲染表格。
+       * @async
+       * @returns {Promise<void>}
+       */
+      async function loadAndRenderHistory() {
+        tbody.innerHTML = ''; // Clear existing rows
+
+        const { data: allData, error } = await supabase
+          .from('shipping_costs')
+          .select('*')
+          .order('date', { ascending: false }); // Sort by date descending
+
+        if (error) {
+          console.error('加载历史数据失败:', error.message);
+          Swal.fire('错误', '加载历史数据失败: ' + error.message, 'error');
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-red-500">加载数据失败</td></tr>';
+          return;
+        }
+
+        if (!allData || allData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-gray-500">暂无历史数据</td></tr>';
+          return;
+        }
+
+        allData.forEach(item => {
+          const date = item.date;
+          const trackingNumber = item.tracking_number || 'N/A';
+          const shipmentId = item.shipment_id || 'N/A';
+          // Ensure numbers are parsed before calculation
+          const totalFreight = (parseFloat(item.total_settle_weight) || 0) * (parseFloat(item.freight_unit_price) || 0);
+          const merchantDetails = item.merchants.map(m => `${m.name} (${m.pieces}件, ${m.weight}kg)`).join('<br>');
+
+          const row = document.createElement('tr');
+          row.className = 'border-b hover:bg-gray-50 transition-colors';
+          row.innerHTML = `
+            <td class="px-6 py-4 font-medium">${date}</td>
+            <td class="px-6 py-4">${trackingNumber}</td>
+            <td class="px-6 py-4">${shipmentId}</td>
+            <td class="px-6 py-4">${totalFreight.toFixed(2)}</td>
+            <td class="px-6 py-4">${parseFloat(item.total_settle_weight || 0).toFixed(3)}</td>
+            <td class="px-6 py-4 text-sm">${merchantDetails}</td>
+            <td class="px-6 py-4 text-center">
+              <button class="delete-btn text-red-500 hover:text-red-700 transition-colors" data-date="${date}">
+                <i class="fa fa-trash"></i> 删除
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // 绑定删除事件
+        document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', async function() {
+            const dateToDelete = this.getAttribute('data-date');
+            
+            Swal.fire({
+              title: '确认删除?',
+              text: `您确定要删除日期为 ${dateToDelete} 的数据吗？此操作无法撤销。`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: '是的，删除它！',
+              cancelButtonText: '取消'
+            }).then(async (result) => { // Added async here
+              if (result.isConfirmed) {
+                const { error: deleteError } = await supabase
+                  .from('shipping_costs')
+                  .delete()
+                  .eq('date', dateToDelete);
+
+                if (deleteError) {
+                  console.error('删除数据失败:', deleteError.message);
+                  Swal.fire('错误', '删除数据失败: ' + deleteError.message, 'error');
+                } else {
+                  Swal.fire('已删除!', '该条历史数据已被删除。', 'success');
+                  loadAndRenderHistory(); // Reload and render to update the table
+                }
+              }
+            });
+          });
+        });
+      }
+
+      // Initial load
+      loadAndRenderHistory();
+    });
+  </script>
+</body>
+</html> 
