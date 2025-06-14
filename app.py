@@ -164,26 +164,28 @@ def permission_required(permission_key):
     一个通用的装饰器，用于保护需要特定权限的路由。
     管理员默认拥有所有权限。普通用户需要其permissions列表中包含permission_key。
     """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            return redirect(url_for('user_login'))
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not session.get('logged_in'):
+                return redirect(url_for('user_login'))
 
-        # 管理员默认拥有所有权限
-        if session.get('role') == 'admin':
-            return f(*args, **kwargs)
+            # 管理员默认拥有所有权限
+            if session.get('role') == 'admin':
+                return f(*args, **kwargs)
 
-        user_permissions_str = session.get('permissions', '[]')
-        try:
-            user_permissions = json.loads(user_permissions_str)
-        except json.JSONDecodeError:
-            user_permissions = [] # 处理非法的 JSON 格式
+            user_permissions_str = session.get('permissions', '[]')
+            try:
+                user_permissions = json.loads(user_permissions_str)
+            except json.JSONDecodeError:
+                user_permissions = [] # 处理非法的 JSON 格式
 
-        if permission_key in user_permissions:
-            return f(*args, **kwargs)
-        else:
-            return "权限不足，无法访问此页面", 403
-    return decorated_function
+            if permission_key in user_permissions:
+                return f(*args, **kwargs)
+            else:
+                return "权限不足，无法访问此页面", 403
+        return decorated_function
+    return decorator
 
 @app.route('/admin/dashboard')
 @login_required
