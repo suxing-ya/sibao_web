@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2物流产品成本核算-计算系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <h1 class="text-3xl font-bold text-center mb-6">Y2物流产品成本核算-计算系统</h1>
+    <div class="container mx-auto bg-white p-6 rounded-lg shadow-md">
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr>
+                    <th colspan="18" class="bg-red-200 text-center py-3 text-2xl font-bold border-b border-gray-300">Y2物流产品成本核算-计算系统</th>
+                </tr>
+                <tr>
+                    <th rowspan="2" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300"></th>
+                    <th colspan="5" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300">1头程</th>
+                    <th colspan="5" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300">2尾程费用</th>
+                    <th colspan="1" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300">1+2成本</th>
+                    <th colspan="3" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300">产品</th>
+                    <th colspan="2" class="bg-teal-600 text-white text-sm py-2 px-4 border-r border-b border-gray-300">合计</th>
+                </tr>
+                <tr class="bg-teal-500 text-white">
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">运费价格</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">基数</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">每克</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">产品重量g</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">头程费用</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">处理费</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">头程合计</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">平台面单费</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">未满30美金</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">差价</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">合计物流成本</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">产品成本</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">销售价格</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">Y2合计成本</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">利润</th>
+                    <th class="py-2 px-4 border-r border-b border-gray-300 text-sm">合计</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="bg-white">
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm">产品1</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-red-500 text-sm">
+                        <input type="number" id="shippingPrice" value="65" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="baseRate">1000</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="perGram">0.065</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-red-500 text-sm">
+                        <input type="number" id="productWeight" value="360" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="firstLegCost">23.4</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm">
+                        <input type="number" id="handlingFee" value="6.5" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-orange-500 text-sm" id="firstLegTotal">29.90</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm">
+                        <input type="number" id="platformSheetFee" value="23.36" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm">
+                        <input type="number" id="notFull30USD" value="21.827" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-orange-500 text-sm" id="difference">1.533</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="totalLogisticsCost">31.433</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-orange-500 text-sm">
+                        <input type="number" id="productCost" value="5" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm">
+                        <input type="number" id="salesPrice" value="0" class="w-20 bg-transparent text-center" oninput="calculateCosts()">
+                    </td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-teal-500 text-sm" id="y2TotalCost">36.4</td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="profit"></td>
+                    <td class="py-2 px-4 border-r border-b border-gray-300 text-sm" id="total"></td>
+                </tr>
+                <tr>
+                    <td colspan="6" class="py-2 px-4 border-r border-b border-gray-300 text-sm align-top">美国换单费用</td>
+                    <td colspan="4" class="py-2 px-4 border-r border-b border-gray-300 text-sm align-top">尾程面单费用100克算大概的价格是3.2美金</td>
+                    <td colspan="3" class="py-2 px-4 border-r border-b border-gray-300 text-sm align-top">这是客户支付的运费2.99美金的换算</td>
+                    <td colspan="4" class="py-2 px-4 border-b border-gray-300 text-sm align-top">商家的成本</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        /**
+         * @function calculateCosts
+         * @description 计算并更新Y2物流产品成本核算表格中的相关费用。
+         */
+        function calculateCosts() {
+            const shippingPrice = parseFloat(document.getElementById('shippingPrice').value) || 0;
+            const baseRate = parseFloat(document.getElementById('baseRate').textContent) || 0;
+            const productWeight = parseFloat(document.getElementById('productWeight').value) || 0;
+            const handlingFee = parseFloat(document.getElementById('handlingFee').value) || 0;
+
+            // 每克 = 运费价格 / 基数
+            const perGram = baseRate !== 0 ? shippingPrice / baseRate : 0;
+            document.getElementById('perGram').textContent = perGram.toFixed(3);
+
+            // 头程费用 = 每克 * 产品重量 g
+            const firstLegCost = perGram * productWeight;
+            document.getElementById('firstLegCost').textContent = firstLegCost.toFixed(2);
+
+            // 头程合计 = 头程费用 + 处理费
+            const firstLegTotal = firstLegCost + handlingFee;
+            document.getElementById('firstLegTotal').textContent = firstLegTotal.toFixed(2);
+
+            // 获取其他输入值
+            const platformSheetFee = parseFloat(document.getElementById('platformSheetFee').value) || 0;
+            const notFull30USD = parseFloat(document.getElementById('notFull30USD').value) || 0;
+            // const difference = parseFloat(document.getElementById('difference').value) || 0; // 这行将被移除或注释掉
+            const productCost = parseFloat(document.getElementById('productCost').value) || 0;
+            const salesPrice = parseFloat(document.getElementById('salesPrice').value) || 0;
+
+            // 差价 = 平台面单费 - 未满30美金
+            const difference = platformSheetFee - notFull30USD;
+            document.getElementById('difference').textContent = difference.toFixed(3);
+
+            // 合计物流成本 = 头程合计 + 平台面单费 + 差价
+            // 注意：这里移除了 notFull30USD，因为差价已经包含了它
+            const totalLogisticsCost = firstLegTotal + platformSheetFee + difference;
+            document.getElementById('totalLogisticsCost').textContent = totalLogisticsCost.toFixed(3);
+
+            // Y2合计成本 = 合计物流成本 + 产品成本
+            const y2TotalCost = totalLogisticsCost + productCost;
+            document.getElementById('y2TotalCost').textContent = y2TotalCost.toFixed(1);
+
+            // 利润 = Y2总成本 / 销售价格 (如果销售价格为0，则利润为0)
+            const profit = salesPrice !== 0 ? y2TotalCost / salesPrice : 0;
+            document.getElementById('profit').textContent = profit.toFixed(2);
+
+            // 总计 = 销售价格 - Y2合计成本
+            const total = salesPrice - y2TotalCost;
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+
+        // 页面加载时执行一次计算，以确保初始值正确显示
+        document.addEventListener('DOMContentLoaded', calculateCosts);
+    </script>
+</body>
+</html> 

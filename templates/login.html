@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员登录</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .form-input-group {
+      position: relative;
+    }
+    .form-input-group .fa {
+      position: absolute;
+      top: 50%;
+      left: 1rem;
+      transform: translateY(-50%);
+      color: #9CA3AF; 
+    }
+    .form-input {
+      padding-left: 2.5rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-900">登录您的账户</h1>
+        <p class="mt-2 text-gray-600">欢迎回来！</p>
+    </div>
+
+    <form id="loginForm" class="space-y-6" novalidate>
+        <!-- Email -->
+        <div class="form-input-group">
+            <label for="email" class="sr-only">电子邮箱</label>
+            <i class="fa fa-envelope"></i>
+            <input type="email" id="email" name="email" placeholder="电子邮箱" required
+                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
+        </div>
+
+        <!-- Password -->
+        <div class="form-input-group">
+            <label for="password" class="sr-only">密码</label>
+            <i class="fa fa-lock"></i>
+            <input type="password" id="password" name="password" placeholder="密码" required
+                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
+        </div>
+        
+        <!-- Submit Button -->
+        <div>
+            <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300">
+                立即登录
+            </button>
+        </div>
+    </form>
+
+    <p class="text-center text-sm text-gray-600">
+        还没有账户？ 
+        <a href="register.html" class="font-medium text-indigo-600 hover:text-indigo-500">立即注册</a>
+    </p>
+  </div>
+
+<script>
+    // Initialize Supabase client
+    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('loginForm');
+        const emailInput = form.elements['email'];
+        const passwordInput = form.elements['password'];
+
+        const showError = (input, message) => {
+            const formGroup = input.parentElement;
+            const errorElement = formGroup.querySelector('.error-message');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            input.classList.add('border-red-500');
+            input.classList.remove('border-green-500');
+        };
+
+        const showSuccess = (input) => {
+            const formGroup = input.parentElement;
+            const errorElement = formGroup.querySelector('.error-message');
+            errorElement.classList.add('hidden');
+            input.classList.remove('border-red-500');
+            input.classList.add('border-green-500');
+        };
+
+        const checkEmail = (input) => {
+            const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            if (re.test(input.value.trim())) {
+                showSuccess(input);
+                return true;
+            } else {
+                showError(input, '电子邮箱格式不正确');
+                return false;
+            }
+        };
+
+        const checkRequired = (inputs) => {
+            let allValid = true;
+            inputs.forEach(input => {
+                if (input.value.trim() === '') {
+                    showError(input, `${input.placeholder}不能为空`);
+                    allValid = false;
+                } else {
+                    showSuccess(input);
+                }
+            });
+            return allValid;
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const isRequiredValid = checkRequired([emailInput, passwordInput]);
+            const isEmailValid = checkEmail(emailInput);
+            
+            if (isRequiredValid && isEmailValid) {
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: emailInput.value,
+                        password: passwordInput.value,
+                    });
+
+                    if (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '登录失败',
+                            text: error.message
+                        });
+                    } else {
+                        console.log('Login successful according to Supabase. Displaying success alert.');
+                        const { user, session: supabaseSession } = data; // Get user and session from Supabase response
+
+                        if (user && supabaseSession) {
+                            // Step 1: Send user data to backend to set Flask session
+                            const backendResponse = await fetch('/post_login_callback', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    access_token: supabaseSession.access_token,
+                                    user_id: user.id,
+                                    email: user.email
+                                })
+                            });
+
+                            const backendData = await backendResponse.json();
+
+                            if (backendResponse.ok && backendData.redirect_url) {
+                                console.log('Backend session set. Redirecting...');
+                        Swal.fire({
+                            icon: 'success',
+                            title: '登录成功!',
+                            text: '您已成功登录。',
+                            showConfirmButton: false,
+                                    timer: 1500 // 缩短计时器，更快跳转
+                        }).then(() => {
+                                    window.location.href = backendData.redirect_url; // Use URL from backend
+                                });
+                            } else {
+                                console.error('Error from backend post_login_callback:', backendData.message);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: '登录失败',
+                                    text: backendData.message || '无法设置用户会话，请联系管理员。'
+                                });
+                            }
+                        } else {
+                            console.error('Supabase login data missing user or session:', data);
+                            Swal.fire({
+                                icon: 'error',
+                                title: '登录失败',
+                                text: '认证数据缺失，请重试或联系管理员。'
+                            });
+                        }
+                    }
+                } catch (signInError) {
+                    console.error('Supabase signInWithPassword error:', signInError);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '登录时发生错误',
+                        text: signInError.message
+                    });
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html> 

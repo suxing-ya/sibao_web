@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temu Y2 货物流转工作流</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 引入 SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <!-- 引入 SweetAlert2 JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <style>
+    /* Custom styles for table layout */
+    .table-container {
+      overflow-x: auto;
+    }
+    .header-group-1 {
+      background-color: #f97316; /* Tailwind orange-500 */
+    }
+    .header-group-2 {
+      background-color: #60a5fa; /* Tailwind blue-400 */
+    }
+    .table-ops {
+      min-width: 120px;
+      max-width: 140px;
+      text-align: center;
+    }
+    .table-ops .btn-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+    .table-ops button {
+      min-width: 48px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 15px;
+      line-height: 1;
+    }
+    /* 添加表格行悬停效果 */
+    .min-w-full tbody tr:hover {
+      background-color: #f3f4f6; /* Tailwind gray-100 */
+      transition: background-color 0.2s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4 font-sans">
+
+  <div class="container mx-auto bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Temu Y2 货物流转工作流</h1>
+      <a href="index.html" class="bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:shadow-lg transform hover:translate-y-[-2px] hover:shadow-xl">
+        <i class="fa fa-arrow-left mr-2"></i> 返回主页
+      </a>
+    </div>
+    
+    <!-- Query Section -->
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm flex flex-wrap items-center justify-center gap-4">
+      <span class="text-gray-700 font-medium">查询时间范围:</span>
+      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近1天</button>
+      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近7天</button>
+      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近10天</button>
+      <!-- Add more query options as needed -->
+    </div>
+
+    <div class="table-container">
+      <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+        <thead class="bg-gray-50">
+          <tr>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 150px;">中国寄件时间</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 160px;">主运单号ID</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 160px;">货件ID</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1">箱麦</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1">箱件数</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 80px;">内装件数</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 100px;">运输状态</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-2" style="min-width: 150px;">美国签收时间</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-2">实收箱数</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-2" style="min-width: 80px;">美国实操作数</th>
+            <th class="table-ops">操作</th>
+          </tr>
+          <tr>
+            <!-- Empty row for the second row of headers, if needed for colspan adjustments -->
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <!-- Data rows will be dynamically loaded here from the backend -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>
+<script>
+    // Supabase配置
+    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Helper function to get Tailwind CSS classes for status background and text color
+    function getStatusBgClass(status) {
+      if (status === '途中') {
+        return 'bg-purple-700 text-white'; // 深紫色背景，白色文字
+      } else if (status === '签收') {
+        return 'bg-green-200 text-gray-800'; // 浅绿色背景，深色文字
+      }
+      return ''; // 默认或未知状态不设置颜色
+    }
+
+    // 分页变量
+    const itemsPerPage = 12; // 每页显示12行
+    let currentPage = 0;   // 当前页码 (0-indexed)
+
+    // 字段映射
+    const fieldMap = [
+      'cn_send_date',
+      'main_tracking_id',
+      'shipment_id',
+      'box_code',
+      'box_count',
+      'inner_count',
+      'status',
+      'us_receive_date',
+      'us_box_count',
+      'us_actual_count'
+    ];
+
+    // 渲染表格数据
+    async function loadTable() {
+      const from = currentPage * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      const { data, error, count } = await supabase
+        .from('temu_workflow')
+        .select('*', { count: 'exact' })
+        .order('id', { ascending: false })
+        .range(from, to);
+      
+      const tbody = document.querySelector('table tbody');
+      tbody.innerHTML = '';
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
+        return;
+      }
+      data.forEach(row => tbody.appendChild(createRow(row)));
+      updatePaginationControls(count);
+    }
+
+    // 创建一行（可编辑）
+    function createRow(row = {}) {
+      const tr = document.createElement('tr');
+      fieldMap.forEach((field, index) => {
+        const td = document.createElement('td');
+        let tdClasses = 'px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center';
+        if (index < fieldMap.length) {
+            tdClasses += ' border-r border-gray-200';
+        }
+        td.className = tdClasses;
+        
+        if (field === 'status') {
+          const statusOptions = ['途中', '签收'];
+          const selectElement = document.createElement('select');
+          
+          const initialStatusValue = row[field] || '途中';
+          // 移除select元素的边框样式，只保留必要的布局和焦点样式
+          selectElement.className = `w-full h-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-sm ${getStatusBgClass(initialStatusValue)}`;
+          
+          statusOptions.forEach(optionText => {
+            const optionElement = document.createElement('option');
+            optionElement.value = optionText;
+            optionElement.textContent = optionText;
+            if (initialStatusValue === optionText) {
+              optionElement.selected = true;
+            }
+            selectElement.appendChild(optionElement);
+          });
+
+          selectElement.addEventListener('change', function() {
+            const selectedStatus = this.value;
+            this.classList.remove('bg-purple-700', 'text-white', 'bg-green-200', 'text-gray-800');
+            const newClasses = getStatusBgClass(selectedStatus).split(' ');
+            newClasses.forEach(cls => {
+              if (cls) this.classList.add(cls);
+            });
+          });
+          td.appendChild(selectElement);
+        } else {
+          let inputType = 'text';
+          const displayValue = row[field] ? (field.includes('date') ? row[field].slice(0,10) : row[field]) : '';
+          const inputElement = document.createElement('input');
+          inputElement.type = inputType;
+          inputElement.value = displayValue;
+          // 移除input元素的边框样式，只保留必要的布局和焦点样式
+          inputElement.className = 'w-full h-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center placeholder-gray-500 text-sm';
+          td.appendChild(inputElement);
+        }
+        
+        tr.appendChild(td);
+      });
+      // 操作按钮
+      const tdOp = document.createElement('td');
+      tdOp.className = 'table-ops px-6 py-1';
+      tdOp.innerHTML = `
+        <div class="btn-group">
+          <button class="save-btn bg-green-500 text-white rounded">保存</button>
+          <button class="delete-btn bg-red-500 text-white rounded">删除</button>
+        </div>
+      `;
+      tr.appendChild(tdOp);
+      tr.dataset.id = row.id || '';
+      return tr;
+    }
+
+    // 新增一行
+    function addNewRow() {
+      const tbody = document.querySelector('table tbody');
+      tbody.insertBefore(createRow(), tbody.firstChild);
+    }
+
+    // 保存（插入或更新）
+    async function saveRow(tr) {
+      try {
+        const inputs = tr.querySelectorAll('input, select');
+        const rowData = {};
+        fieldMap.forEach((field, idx) => {
+          let val = inputs[idx].value;
+          // 根据字段名判断是否为数字类型，并进行转换
+          if (field.includes('count')) val = val ? parseInt(val) : null;
+          if (field.includes('date')) val = val || null;
+          rowData[field] = val;
+        });
+        let res;
+        if (tr.dataset.id) {
+          // 更新
+          res = await supabase.from('temu_workflow').update(rowData).eq('id', tr.dataset.id).select();
+        } else {
+          // 新增
+          res = await supabase.from('temu_workflow').insert([rowData]).select();
+        }
+        if (res.error) {
+          Swal.fire({
+            icon: 'error',
+            title: '保存失败',
+            text: '' + res.error.message,
+          });
+        } else {
+          Swal.fire({
+            icon: 'success',
+            title: '保存成功',
+            showConfirmButton: false,
+            timer: 1500
+          });
+          await loadTable();
+        }
+      } catch (e) {
+        console.error("Error in saveRow:", e); // 将错误输出到控制台
+        Swal.fire({
+          icon: 'error',
+          title: '操作失败',
+          text: '发生未知错误：' + e.message,
+        });
+      }
+    }
+
+    // 删除
+    async function deleteRow(tr) {
+      if (!tr.dataset.id) {
+        tr.remove();
+        return;
+      }
+      if (!confirm('确定要删除这条数据吗？')) return;
+      const { error } = await supabase.from('temu_workflow').delete().eq('id', tr.dataset.id);
+      if (error) {
+        alert('删除失败: ' + error.message);
+      } else {
+        await loadTable();
+      }
+    }
+
+    // 事件绑定
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载数据
+      loadTable();
+      // 新增按钮
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '新增';
+      addBtn.className = 'mb-4 bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition';
+      addBtn.onclick = addNewRow;
+      document.querySelector('.container').insertBefore(addBtn, document.querySelector('.table-container'));
+
+      // 添加分页控制容器
+      const paginationContainer = document.createElement('div');
+      paginationContainer.className = 'flex justify-center items-center mt-6 space-x-4';
+      paginationContainer.innerHTML = `
+        <button id="prevPageBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition">上一页</button>
+        <span id="pageInfo" class="text-gray-700"></span>
+        <button id="nextPageBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition">下一页</button>
+      `;
+      document.querySelector('.container').appendChild(paginationContainer);
+
+      // 绑定分页按钮事件
+      document.getElementById('prevPageBtn').addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          loadTable();
+        }
+      });
+
+      document.getElementById('nextPageBtn').addEventListener('click', () => {
+        // 检查是否还有下一页，这里需要总页数信息，将在 updatePaginationControls 中处理
+        currentPage++;
+        loadTable();
+      });
+
+      // 委托事件
+      document.querySelector('table tbody').addEventListener('click', async e => {
+        const tr = e.target.closest('tr');
+        if (e.target.classList.contains('save-btn')) {
+          await saveRow(tr);
+        } else if (e.target.classList.contains('delete-btn')) {
+          await deleteRow(tr);
+        }
+      });
+    });
+
+    // 更新分页控制状态
+    function updatePaginationControls(totalCount) {
+      const pageInfoSpan = document.getElementById('pageInfo');
+      const prevBtn = document.getElementById('prevPageBtn');
+      const nextBtn = document.getElementById('nextPageBtn');
+
+      const totalPages = Math.ceil(totalCount / itemsPerPage);
+      pageInfoSpan.textContent = `第 ${currentPage + 1} / ${totalPages} 页`;
+
+      prevBtn.disabled = currentPage === 0;
+      nextBtn.disabled = currentPage >= totalPages - 1;
+
+      // 禁用按钮的样式
+      if (prevBtn.disabled) {
+        prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+      if (nextBtn.disabled) {
+        nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+</script>

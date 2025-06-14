@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账户管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* Custom styles if needed, Tailwind handles most */
+    .table-container {
+        overflow-x: auto;
+    }
+    .tab-item.active {
+        border-bottom: 2px solid #4F46E5; /* Indigo-600 */
+        color: #4F46E5; /* Indigo-600 */
+    }
+    .tab-item:not(.active) {
+        color: #6B7280; /* Gray-500 */
+    }
+    td, th { padding-top: 2px !important; padding-bottom: 2px !important; }
+    input, select { padding-top: 1px !important; padding-bottom: 1px !important; height: 24px !important; font-size: 13px !important; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Admin Dashboard -->
+  <div class="container mx-auto p-4 flex-grow">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">| 账户管理</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+      <div class="flex border-b border-gray-200 mb-6">
+        <button class="tab-item active py-2 px-4 text-sm font-medium focus:outline-none" id="accountManagementTab">
+          账号管理
+        </button>
+        <button class="tab-item py-2 px-4 text-sm font-medium focus:outline-none" id="roleListTab">
+          角色列表
+          </button>
+        <button id="logoutBtn" class="ml-auto bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 transition duration-300 text-sm">
+          登出 ({{ session.username }})
+        </button>
+      </div>
+
+      <div id="accountManagementContent">
+        <div class="flex justify-between items-center mb-4">
+          <button class="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition duration-300 text-sm">
+            + 新增子账号
+          </button>
+          <div class="relative flex items-center">
+            <input type="text" placeholder="请输入账号名称" class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <svg class="absolute left-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="table-container">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  账号名
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  账号类型
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                角色
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  账号备注
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody id="membersTableBody" class="bg-white divide-y divide-gray-200">
+            {% for member in members %}
+              <tr data-id="{{ member.id }}" data-permissions="{{ member.permissions | tojson | safe }}">
+                <td class="px-6 py-4 whitespace-nowrap">{{ member.username }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ member.role }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ member.notes or '' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {% if member.role != 'admin' %}
+                  <button class="text-indigo-600 hover:text-indigo-900 mr-4 edit-btn" data-id="{{ member.id }}">编辑</button>
+                  <button class="text-red-600 hover:text-red-900 delete-btn" data-id="{{ member.id }}">删除</button>
+                  <button class="text-blue-600 hover:text-blue-900 ml-4 manage-permissions-btn" data-id="{{ member.id }}">权限管理</button>
+                  {% else %}
+                  <span class="text-gray-500">N/A</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      </div>
+
+      <div id="roleListContent" class="hidden">
+        <!-- Role list content will go here -->
+        <p class="text-gray-600">角色列表内容待开发...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logoutBtn');
+        const accountManagementTab = document.getElementById('accountManagementTab');
+        const roleListTab = document.getElementById('roleListTab');
+        const accountManagementContent = document.getElementById('accountManagementContent');
+        const roleListContent = document.getElementById('roleListContent');
+        const membersTableBody = document.getElementById('membersTableBody');
+
+        /**
+         * 显示 SweetAlert2 提示消息。
+         * @param {string} icon - 图标类型 (success, error, warning, info, question)。
+         * @param {string} title - 提示标题。
+         * @param {string} text - 提示内容。
+         * @param {number} timer - 自动关闭的毫秒数 (可选)。
+         * @returns {Promise<SweetAlertResult>} SweetAlert2 结果对象。
+         */
+        const showAlert = (icon, title, text, timer = null) => {
+            return Swal.fire({
+                icon: icon,
+                title: title,
+                text: text,
+                timer: timer,
+                showConfirmButton: timer ? false : true,
+                timerProgressBar: timer ? true : false,
+                customClass: {
+                    popup: 'rounded-xl shadow-lg'
+                }
+            });
+        };
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.location.href = "{{ url_for('admin_logout') }}";
+            });
+        }
+
+        // Tab switching logic
+        accountManagementTab.addEventListener('click', () => {
+            accountManagementTab.classList.add('active');
+            roleListTab.classList.remove('active');
+            accountManagementContent.classList.remove('hidden');
+            roleListContent.classList.add('hidden');
+        });
+
+        roleListTab.addEventListener('click', () => {
+            roleListTab.classList.add('active');
+            accountManagementTab.classList.remove('active');
+            roleListContent.classList.remove('hidden');
+            accountManagementContent.classList.add('hidden');
+        });
+
+        const addSubAccountBtn = document.querySelector('.flex.justify-between.items-center.mb-4 button');
+        const newAccountDrawer = document.getElementById('newAccountDrawer');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const cancelNewAccountBtn = document.getElementById('cancelNewAccountBtn');
+        const drawerOverlay = document.getElementById('drawerOverlay');
+
+        if (addSubAccountBtn) {
+            addSubAccountBtn.addEventListener('click', () => {
+                newAccountDrawer.classList.remove('translate-x-full', 'hidden');
+                newAccountDrawer.classList.add('translate-x-0');
+                drawerOverlay.classList.remove('hidden');
+            });
+        }
+
+        const hideDrawer = () => {
+            newAccountDrawer.classList.remove('translate-x-0');
+            newAccountDrawer.classList.add('translate-x-full');
+            drawerOverlay.classList.add('hidden');
+        };
+
+        if (closeDrawerBtn) {
+            closeDrawerBtn.addEventListener('click', hideDrawer);
+        }
+        if (cancelNewAccountBtn) {
+            cancelNewAccountBtn.addEventListener('click', hideDrawer);
+        }
+        if (drawerOverlay) {
+            drawerOverlay.addEventListener('click', hideDrawer);
+        }
+
+        const newSubAccountForm = document.getElementById('newSubAccountForm');
+        if (newSubAccountForm) {
+            newSubAccountForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const username = document.getElementById('newUsername').value;
+                const password = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const email = document.getElementById('newEmail').value;
+
+                if (!username || !password || !confirmPassword) {
+                    showAlert('warning', '输入有误', '账号名、密码和确认密码不能为空。');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showAlert('warning', '密码不匹配', '两次输入的密码不一致，请重新输入。');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showAlert('warning', '密码过短', '密码长度不能少于6位。');
+                    return;
+                }
+
+                // Optional: Basic email validation
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showAlert('warning', '邮箱格式错误', '请输入有效的邮箱地址。');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/sub_accounts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password, email })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showAlert('success', '创建成功', result.message || '子账号已成功创建！', 1500);
+                        newSubAccountForm.reset(); // Clear form
+                        hideDrawer(); // Hide the drawer
+                        // Optionally, reload the members table to show the new account
+                        // For now, we assume the table is rendered on page load and can be refreshed by a page reload
+                        location.reload(); // Simple reload to reflect new data
+                    } else {
+                        showAlert('error', '创建失败', result.message || '创建子账号失败。');
+                    }
+                } catch (error) {
+                    console.error('创建子账号时发生错误:', error);
+                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                }
+            });
+        }
+
+        /**
+         * 为会员列表中的按钮和选择框附加事件处理程序。
+         */
+        const attachEventHandlers = () => {
+            if (!membersTableBody) return;
+
+            // Edit Notes for 'can' account
+            membersTableBody.querySelectorAll('.edit-notes-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const row = e.target.closest('tr');
+                    const memberId = row.dataset.id;
+                    const currentNotesCell = row.querySelector('.notes-cell');
+                    const currentNotes = currentNotesCell.dataset.notes;
+
+                    const { value: newNotes } = await Swal.fire({
+                        title: '修改账号备注',
+                        input: 'text',
+                        inputLabel: '请输入新的备注',
+                        inputValue: currentNotes,
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return '备注不能为空！';
+                            }
+                        }
+                    });
+
+                    if (newNotes !== undefined) {
+                        try {
+                            const response = await fetch(`/api/member/${memberId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ notes: newNotes, role: 'admin' }) // role is also sent, though it won't change for admin
+                            });
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            const result = await response.json();
+                            showAlert('success', '更新成功', result.message || '账号备注已更新');
+                            currentNotesCell.textContent = newNotes; // Update UI
+                            currentNotesCell.dataset.notes = newNotes; // Update data attribute
+                        } catch (error) {
+                            console.error('更新备注失败:', error);
+                            showAlert('error', '更新失败', '无法更新账号备注。');
+                        }
+                    }
+                });
+            });
+
+            // Change Password for 'can' account (Placeholder - backend not implemented yet)
+            membersTableBody.querySelectorAll('.change-password-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const row = e.target.closest('tr');
+                    const memberId = row.dataset.id;
+
+                    const { value: formValues } = await Swal.fire({
+                        title: '修改登录密码',
+                        html:
+                            '<input id="swal-input1" class="swal2-input" type="password" placeholder="新密码">' +
+                            '<input id="swal-input2" class="swal2-input" type="password" placeholder="确认新密码">',
+                        focusConfirm: false,
+                        preConfirm: () => {
+                            const newPassword = Swal.getPopup().querySelector('#swal-input1').value;
+                            const confirmPassword = Swal.getPopup().querySelector('#swal-input2').value;
+                            if (newPassword === confirmPassword && newPassword.length >= 6) {
+                                return { newPassword: newPassword };
+                            } else if (newPassword.length < 6) {
+                                Swal.showValidationMessage(`密码长度不能少于6位`);
+                                return false;
+                            } else {
+                                Swal.showValidationMessage(`两次输入的密码不一致`);
+                                return false;
+                            }
+                        }
+                    });
+
+                    if (formValues) {
+                        // Here you would send a request to your backend to update the password
+                        // For now, it's just a placeholder
+                        showAlert('info', '功能待开发', '修改登录密码功能正在开发中。');
+                        console.log(`Update password for member ID ${memberId} to ${formValues.newPassword}`);
+                    }
+                });
+            });
+
+            // Edit Info for sub-accounts (Placeholder - backend not implemented yet)
+            membersTableBody.querySelectorAll('.edit-info-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const row = e.target.closest('tr');
+                    const memberId = row.dataset.id;
+                    const username = row.querySelector('td:nth-child(1)').textContent;
+                    const notes = row.querySelector('.notes-cell').dataset.notes;
+
+                    const { value: formValues } = await Swal.fire({
+                        title: '编辑会员信息',
+                        html:
+                            `<label for="swal-input-username">账号名:</label><input id="swal-input-username" class="swal2-input" value="${username}">` +
+                            `<label for="swal-input-notes">账号备注:</label><input id="swal-input-notes" class="swal2-input" value="${notes}">`,
+                        focusConfirm: false,
+                        preConfirm: () => {
+                            const updatedUsername = Swal.getPopup().querySelector('#swal-input-username').value;
+                            const updatedNotes = Swal.getPopup().querySelector('#swal-input-notes').value;
+                            if (!updatedUsername || !updatedNotes) {
+                                Swal.showValidationMessage(`账号名和备注不能为空！`);
+                                return false;
+                            }
+                            return { username: updatedUsername, notes: updatedNotes };
+                        }
+                    });
+
+                    if (formValues) {
+                        // Here you would send a request to your backend to update member info
+                        showAlert('info', '功能待开发', '编辑会员信息功能正在开发中。');
+                        console.log(`Update member ID ${memberId} with username: ${formValues.username}, notes: ${formValues.notes}`);
+                    }
+                });
+            });
+
+            // Update Role for sub-accounts
+            membersTableBody.querySelectorAll('.update-role-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const row = e.target.closest('tr');
+                    const memberId = row.dataset.id;
+                    const username = row.querySelector('td:nth-child(1)').textContent; // Get username for confirmation
+
+                    const { value: newRole } = await Swal.fire({
+                        title: '修改账号权限',
+                        input: 'select',
+                        inputOptions: {
+                            'admin': '管理员',
+                            'member': '普通会员'
+                        },
+                        inputPlaceholder: '选择权限',
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            return new Promise((resolve) => {
+                                if (value) {
+                                    resolve();
+                                } else {
+                                    resolve('请选择一个权限！');
+                                }
+                            });
+                        }
+                    });
+
+                    if (newRole) {
+                        const result = await showAlert('question', '确认更新？', `确定要将用户 ${username} 的权限更新为 ${newRole === 'admin' ? '管理员' : '普通会员'} 吗？`, null);
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch(`/api/member/${memberId}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ role: newRole }) // Send only role for this action
+                                });
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                const result = await response.json();
+                                showAlert('success', '更新成功', result.message || '权限已更新');
+                                row.querySelector('td:nth-child(3)').textContent = newRole; // Update role in UI
+                        } catch (error) {
+                            console.error('更新权限失败:', error);
+                                showAlert('error', '更新失败', '无法更新会员权限。');
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Delete member
+            membersTableBody.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const row = e.target.closest('tr');
+                    const memberId = row.dataset.id;
+                    const username = row.querySelector('td:nth-child(1)').textContent; // Get username for confirmation
+
+                    const result = await showAlert('question', '确认删除？', `确定要删除用户 ${username} 吗？此操作不可撤销！`, null);
+                    if (result.isConfirmed) {
+                        try {
+                            const response = await fetch(`/api/member/${memberId}`, {
+                                method: 'DELETE'
+                            });
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            const result = await response.json();
+                            showAlert('success', '删除成功', result.message || '会员已删除', 1500);
+                            row.remove(); // Remove row from UI
+                        } catch (error) {
+                            console.error('删除会员失败:', error);
+                            showAlert('error', '删除失败', '无法删除会员。');
+                        }
+                    }
+                });
+            });
+        };
+
+        // Initial attachment of event handlers (for members loaded on page load)
+        attachEventHandlers();
+
+        // Permissions Management Drawer Logic
+        const permissionsDrawer = document.getElementById('permissionsDrawer');
+        const permissionsDrawerOverlay = document.getElementById('permissionsDrawerOverlay');
+        const closePermissionsDrawerBtn = document.getElementById('closePermissionsDrawerBtn');
+        const cancelPermissionsBtn = document.getElementById('cancelPermissionsBtn');
+        const permissionsForm = document.getElementById('permissionsForm');
+        const currentMemberIdForPermissions = document.getElementById('currentMemberIdForPermissions');
+        const permY2CostHtml = document.getElementById('perm_y2cost_html');
+        const permTemuY2GzlHtml = document.getElementById('perm_temu_y2gzl_html');
+        const permExpenseAllocationFunction = document.getElementById('perm_expense_allocation_function');
+        const permBarcodeGeneratorHtml = document.getElementById('perm_barcode_generator_html');
+
+        // 定义所有可能的功能权限及其对应的标识符
+        const ALL_PERMISSIONS = {
+            'y2cost_html': permY2CostHtml,
+            'temu_y2gzl_html': permTemuY2GzlHtml,
+            'expense_allocation_function': permExpenseAllocationFunction,
+            'barcode_generator_html': permBarcodeGeneratorHtml
+        };
+
+        const showPermissionsDrawer = (memberId, currentPermissions) => {
+            currentMemberIdForPermissions.value = memberId;
+            
+            // 重置所有复选框状态
+            for (const key in ALL_PERMISSIONS) {
+                if (ALL_PERMISSIONS.hasOwnProperty(key)) {
+                    ALL_PERMISSIONS[key].checked = false;
+                }
+            }
+
+            // 根据当前权限设置复选框状态
+            if (currentPermissions) {
+                for (const permission of currentPermissions) {
+                    if (ALL_PERMISSIONS[permission]) {
+                        ALL_PERMISSIONS[permission].checked = true;
+                    }
+                }
+            }
+
+            permissionsDrawer.classList.remove('translate-x-full', 'hidden');
+            permissionsDrawer.classList.add('translate-x-0');
+            permissionsDrawerOverlay.classList.remove('hidden');
+        };
+
+        const hidePermissionsDrawer = () => {
+            permissionsDrawer.classList.remove('translate-x-0');
+            permissionsDrawer.classList.add('translate-x-full');
+            permissionsDrawerOverlay.classList.add('hidden');
+        };
+
+        // 为"权限管理"按钮添加事件监听器
+        membersTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('manage-permissions-btn')) {
+                const memberId = e.target.dataset.id;
+                const row = e.target.closest('tr');
+                // 安全地解析 permissions 字符串
+                let currentPermissions = [];
+                try {
+                    const permissionsStr = row.dataset.permissions;
+                    currentPermissions = JSON.parse(permissionsStr || '[]');
+                } catch (error) {
+                    console.error('解析权限数据失败:', error);
+                    currentPermissions = [];
+                }
+                showPermissionsDrawer(memberId, currentPermissions);
+            }
+        });
+
+        if (closeDrawerBtn) {
+            closeDrawerBtn.addEventListener('click', hideDrawer);
+        }
+        if (cancelPermissionsBtn) {
+            cancelPermissionsBtn.addEventListener('click', hidePermissionsDrawer);
+        }
+        if (permissionsDrawerOverlay) {
+            permissionsDrawerOverlay.addEventListener('click', hidePermissionsDrawer);
+        }
+
+        // 权限表单提交逻辑
+        if (permissionsForm) {
+            permissionsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const memberId = currentMemberIdForPermissions.value;
+                const selectedPermissions = [];
+
+                for (const key in ALL_PERMISSIONS) {
+                    if (ALL_PERMISSIONS.hasOwnProperty(key) && ALL_PERMISSIONS[key].checked) {
+                        selectedPermissions.push(key);
+                    }
+                }
+
+                try {
+                    const response = await fetch(`/api/member/${memberId}/permissions`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ permissions: selectedPermissions })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showAlert('success', '权限更新成功', result.message || '会员权限已成功更新！', 1500);
+                        hidePermissionsDrawer();
+                        // 重新加载会员数据以更新表格中的权限显示
+                        location.reload(); 
+                    } else {
+                        showAlert('error', '权限更新失败', result.message || '更新会员权限失败。');
+                    }
+                } catch (error) {
+                    console.error('更新会员权限时发生错误:', error);
+                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                }
+            });
+        }
+    });
+  </script>
+
+  <!-- New Sub-account Drawer -->
+  <div id="newAccountDrawer" class="fixed inset-0 z-50 transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+    <!-- Overlay -->
+    <div id="drawerOverlay" class="absolute inset-0 bg-black bg-opacity-50 hidden"></div>
+
+    <!-- Drawer Panel -->
+    <div class="absolute right-0 top-0 w-full md:w-1/3 h-full bg-white shadow-xl flex flex-col p-6">
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">新建子账号</h2>
+        <button id="closeDrawerBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="newSubAccountForm" class="flex-grow space-y-4">
+        <h3 class="text-lg font-medium text-gray-700">基本信息</h3>
+        <div>
+          <label for="newUsername" class="block text-sm font-medium text-gray-700">*账号名</label>
+          <input type="text" id="newUsername" name="username" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label for="newPassword" class="block text-sm font-medium text-gray-700">*登录密码</label>
+          <input type="password" id="newPassword" name="password" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label for="confirmPassword" class="block text-sm font-medium text-gray-700">*确认密码</label>
+          <input type="password" id="confirmPassword" name="confirm_password" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label for="newEmail" class="block text-sm font-medium text-gray-700">邮箱</label>
+          <input type="email" id="newEmail" name="email"
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label for="newRole" class="block text-sm font-medium text-gray-700">*子账号角色</label>
+          <div class="mt-1 p-3 bg-yellow-400 text-black text-center font-bold rounded-md">
+            功能模块开发
+          </div>
+          <!-- <select id="newRole" name="role" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <option value="member">普通会员</option>
+            <option value="admin">管理员</option>
+          </select> -->
+        </div>
+        <!-- Other fields as needed -->
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
+          <button type="button" id="cancelNewAccountBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">创建账号</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Permissions Management Drawer -->
+  <div id="permissionsDrawer" class="fixed inset-0 z-50 transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+    <!-- Overlay -->
+    <div id="permissionsDrawerOverlay" class="absolute inset-0 bg-black bg-opacity-50 hidden"></div>
+
+    <!-- Drawer Panel -->
+    <div class="absolute right-0 top-0 w-full md:w-1/3 h-full bg-white shadow-xl flex flex-col p-6">
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">管理会员权限</h2>
+        <button id="closePermissionsDrawerBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="permissionsForm" class="flex-grow space-y-4">
+        <input type="hidden" id="currentMemberIdForPermissions">
+        <h3 class="text-lg font-medium text-gray-700 mb-4">请勾选该用户可访问的功能：</h3>
+
+        <div class="space-y-2">
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_expense_allocation_function" name="permissions" value="expense_allocation_function" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_expense_allocation_function" class="ml-2 block text-sm text-gray-900">运费分摊核算</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_y2cost_html" name="permissions" value="y2cost_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_y2cost_html" class="ml-2 block text-sm text-gray-900">成本核算</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_temu_y2gzl_html" name="permissions" value="temu_y2gzl_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_temu_y2gzl_html" class="ml-2 block text-sm text-gray-900">货物工作流</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_barcode_generator_html" name="permissions" value="barcode_generator_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_barcode_generator_html" class="ml-2 block text-sm text-gray-900">条形码生成</label>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
+          <button type="button" id="cancelPermissionsBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">保存权限</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

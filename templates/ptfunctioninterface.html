@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户功能界面</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    /* 可以添加一些自定义样式，如果 Tailwind 无法满足所有需求 */
+  </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+  <div class="flex flex-col md:flex-row min-h-screen bg-gray-100">
+    <!-- 左侧边栏：用户个人信息 -->
+    <aside class="w-full md:w-1/4 p-6 bg-white shadow-md rounded-lg md:mr-4 mb-6 md:mb-0">
+      <div class="text-center">
+        <!-- 用户头像占位符 -->
+        <img src="https://via.placeholder.com/100" alt="User Avatar" class="rounded-full mx-auto mb-4 border-4 border-indigo-300">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ user_profile.username }}</h2>
+        <p class="text-gray-600 text-sm mb-4">{{ user_profile.email }}</p>
+        <hr class="border-gray-200 mb-4">
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <p class="text-gray-700 font-semibold">角色:</p>
+          <p class="text-indigo-600 font-medium">{{ user_profile.role }}</p>
+        </div>
+        <div>
+          <p class="text-gray-700 font-semibold">注册时间:</p>
+          <p class="text-gray-800">{{ user_profile.created_at | datetime_format }}</p>
+        </div>
+        <div>
+          <p class="text-gray-700 font-semibold">备注:</p>
+          <p class="text-gray-800">{{ user_profile.notes if user_profile.notes else '无' }}</p>
+        </div>
+        <!-- 登出按钮 -->
+        <div class="mt-8">
+          <a href="{{ url_for('user_logout') }}" class="block w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-center transition-all duration-300">
+            <i class="fa fa-sign-out mr-2"></i> 登出
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右侧内容区：功能列表 -->
+    <main class="flex-1 p-6 bg-white shadow-md rounded-lg">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">我的功能</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for func in functions %}
+        <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ func.name }}</h2>
+            {% if func.description %}
+            <p class="text-gray-600 mb-4">{{ func.description }}</p>
+            {% endif %}
+          </div>
+          <div class="mt-auto">
+            {% if func.get('required_role') and user_profile.role != func.required_role %}
+            <button class="block w-full py-2 px-4 bg-gray-300 text-gray-700 font-semibold rounded-lg text-center cursor-not-allowed" disabled>
+              <i class="fa fa-lock mr-2"></i> 权限不足
+            </button>
+            {% else %}
+            <a href="{{ url_for(func.url_route) }}" class="block w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-lg text-center transition-all duration-300">
+              立即体验 →
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+
+</body>
+</html> 
