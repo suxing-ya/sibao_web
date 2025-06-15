@@ -161,6 +161,8 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
+            if request.is_json:
+                return jsonify({"message": "未登录或会话已过期，请重新登录。"}), 401
             return redirect(url_for('user_login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -172,7 +174,9 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get('role') != 'admin':
-            return "权限不足", 403 # Forbidden
+            if request.is_json:
+                return jsonify({"message": "权限不足，无权访问此功能。"}), 403
+            return "权限不足", 403 # Forbidden for non-API requests
         return f(*args, **kwargs)
     return decorated_function
 
@@ -468,6 +472,45 @@ def update_member_permissions(member_id):
         import traceback
         traceback.print_exc()
         return jsonify({"message": f"服务器错误：无法更新会员权限。详情：{e}"}), 500
+
+@app.route('/api/member/<string:member_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_member(member_id):
+    """
+    删除指定会员及其在 Supabase 中的关联数据。
+    @param {string} member_id - 要删除的会员ID。
+    @returns {flask.Response} JSON 响应，指示删除成功或失败。
+    """
+    try:
+        # 1. 删除 profiles 表中的用户档案
+        profile_delete_response = supabase.from_('profiles').delete().eq('id', member_id).execute()
+        if not profile_delete_response.data:
+            print(f"DEBUG: No profile found for deletion with ID {member_id} or no rows affected.")
+
+        # 2. 删除 auth.users 中的用户 (需要Service Role Key权限)
+        # 再次初始化admin_supabase客户端，确保使用正确的key
+        admin_supabase_url = os.environ.get("SUPABASE_URL")
+        admin_service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        admin_supabase: Client = create_client(admin_supabase_url, admin_service_role_key)
+
+        delete_auth_user_response = admin_supabase.auth.admin.delete_user(member_id)
+        # Supabase delete_user() doesn't return data directly for success, but raises exception on failure.
+
+        return jsonify({"message": "会员及相关数据已成功删除。"}), 200
+    except Exception as e:
+        print(f"删除会员时发生错误: {e}")
+        import traceback
+        traceback.print_exc()
+        # 如果是 Supabase 错误，尝试提取更具体的错误信息
+        error_message = str(e)
+        if hasattr(e, '__dict__') and 'json' in e.__dict__:
+            try:
+                error_json = json.loads(e.json)
+                error_message = error_json.get('msg', error_message) # Supabase auth errors often have 'msg'
+            except (json.JSONDecodeError, TypeError):
+                pass # Ignore if json is not valid
+        return jsonify({"message": f"服务器错误：无法删除会员。详情：{error_message}"}), 500
 
 # Removed SQLite initialization
 if __name__ == '__main__':
