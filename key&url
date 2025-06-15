@@ -1,10 +1,44 @@
 在以下的代码修改中，我将使用 origins=["*"]，这意味着允许任何来源的请求。这在开发阶段很方便，但为了生产环境的安全，强烈建议你将 "*" 替换为你 Vercel 上的前端网站的域名。 例如：origins=["https://your-frontend-vercel-app.vercel.app"]。
 
 
+cd /var/www/sibao_web && git pull
+sudo systemctl restart sibao_web
+
+python app.py
+
 ssh root@49.232.220.154
+ssh -o ServerAliveInterval=60 root@49.232.220.154
 Ab2Cd3Ef4Gh5Ij6K!@
 cd /var/www/sibao_web
 source venv/bin/activate
 
+git pull origin main
+
+gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
+
+sudo lsof -i :5000
+
+cat gunicorn_output.log
+
+curl http://127.0.0.1:5000/
+
+这个命令会模拟从服务器自身向 5000 端口发起 HTTP 请求。
+如果 Flask 应用正常响应，您应该会看到 HTML 内容（例如您的 index.html 或默认路由的输出）。
+如果仍然出现错误，那说明 Gunicorn 确实没有在内部正确地提供服务。
+请您运行 curl http://127.0.0.1:5000/ 命令，并将输出结果提供给我。
+
+
 suxing-ya
 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
+
+✅ SECRET_KEY 配置： app.secret_key 现在从环境变量 FLASK_SECRET_KEY 加载，并添加了安全检查。
+重要提示： 在您的生产服务器上，您需要设置一个名为 FLASK_SECRET_KEY 的环境变量，其值是一个非常长、复杂的随机字符串。这个字符串不应该出现在任何代码或 Git 仓库中。
+
+⚠️ CORS 配置： CORS(app, origins=["*"]) 目前允许所有来源。在生产环境中，强烈建议将其替换为您实际的前端域名，以增强安全性（例如 origins=["https://your-frontend-domain.com"]）。
+当您在服务器上部署时，请牢记之前我们讨论的生产环境部署最佳实践（使用 Gunicorn + Systemd/Supervisor + Nginx），并确保所有环境变量都已正确配置。
+
+
+
+934413bd92c57832e24771497a3a20b4f7fb470dfc032318
+这就是你未来要在生产环境使用的 FLASK_SECRET_KEY。
+

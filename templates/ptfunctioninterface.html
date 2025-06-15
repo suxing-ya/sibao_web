@@ -57,7 +57,14 @@
             {% endif %}
           </div>
           <div class="mt-auto">
-            {% if func.get('required_role') and user_profile.role != func.required_role %}
+            {% set has_permission = true %}
+            {% if func.get('required_permission') %}
+              {% if user_profile.role != 'admin' and func.required_permission not in user_profile.permissions %}
+                {% set has_permission = false %}
+              {% endif %}
+            {% endif %}
+
+            {% if not has_permission %}
             <button class="block w-full py-2 px-4 bg-gray-300 text-gray-700 font-semibold rounded-lg text-center cursor-not-allowed" disabled>
               <i class="fa fa-lock mr-2"></i> 权限不足
             </button>

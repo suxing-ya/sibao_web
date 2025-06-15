@@ -336,7 +336,7 @@ def pt_function_interface():
 
     try:
         # 从 Supabase 获取用户个人信息（不包括 email，因为 email 存在 auth.users 中，且已在 session 中）
-        profile_response = supabase.from_('profiles').select('username, role, created_at, notes').eq('id', user_id).single().execute()
+        profile_response = supabase.from_('profiles').select('username, role, created_at, notes, permissions').eq('id', user_id).single().execute()
         user_profile_data = profile_response.data
 
         if not user_profile_data:
@@ -344,13 +344,15 @@ def pt_function_interface():
 
         # 将会话中的 email 添加到 user_profile_data，以便模板使用
         user_profile_data['email'] = user_email
+        # 确保permissions是列表形式，便于前端直接判断
+        user_profile_data['permissions'] = json.loads(user_profile_data.get('permissions', '[]'))
 
         # 模拟用户可用的功能列表
         available_functions = [
-            {"name": "货物工作流", "description": "Temu Y2 货物流转工作流，实时了解物流情况", "url_route": "temu_y2gzl_html", "required_role": "admin"},
-            {"name": "运费分摊核算", "description": "计算每项货物的分摊费用，并支持数据保存、查询和导出。", "url_route": "expense_allocation_function"},
-            {"name": "成本核算", "description": "进行各项成本的精确计算和分析。", "url_route": "y2cost_html", "required_role": "admin"},
-            {"name": "条形码生成", "description": "快速生成并打印各类商品条形码，支持自定义内容和格式。", "url_route": "barcode_generator_html", "required_role": "admin"},
+            {"name": "货物工作流", "description": "Temu Y2 货物流转工作流，实时了解物流情况", "url_route": "temu_y2gzl_html", "required_permission": "temu_y2gzl_html"},
+            {"name": "运费分摊核算", "description": "计算每项货物的分摊费用，并支持数据保存、查询和导出。", "url_route": "expense_allocation_function", "required_permission": "expense_allocation_function"},
+            {"name": "成本核算", "description": "进行各项成本的精确计算和分析。", "url_route": "y2cost_html", "required_permission": "y2cost_html"},
+            {"name": "条形码生成", "description": "快速生成并打印各类商品条形码，支持自定义内容和格式。", "url_route": "barcode_generator_html", "required_permission": "barcode_generator_html"},
             # 以下是原有的通用功能，如果需要保留，请保留；如果需要移除，可以删除。
             # {"name": "专属优惠", "description": "浏览仅为您提供的个性化优惠和折扣。"},
             # {"name": "账户设置", "description": "管理您的个人资料、密码和偏好设置。"},
