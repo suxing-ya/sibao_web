@@ -1,0 +1,10 @@
+在以下的代码修改中，我将使用 origins=["*"]，这意味着允许任何来源的请求。这在开发阶段很方便，但为了生产环境的安全，强烈建议你将 "*" 替换为你 Vercel 上的前端网站的域名。 例如：origins=["https://your-frontend-vercel-app.vercel.app"]。
+
+
+ssh root@49.232.220.154
+Ab2Cd3Ef4Gh5Ij6K!@
+cd /var/www/sibao_web
+source venv/bin/activate
+
+suxing-ya
+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

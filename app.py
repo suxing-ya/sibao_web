@@ -11,13 +11,18 @@ from flask_cors import CORS # 导入 Flask-CORS
 
 from supabase import create_client, Client
 
-print("DEBUG: app.py started execution.") # New debug print
+# print("DEBUG: app.py started execution.") # New debug print - REMOVED FOR PRODUCTION
 
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
 CORS(app, origins=["*"]) # 初始化 CORS，允许所有来源访问，生产环境请指定前端域名
-app.secret_key = os.urandom(24) # 用于会话加密，生产环境应使用更安全的随机字符串或从环境变量加载
+
+# Flask Secret Key for session management. MUST be a strong, fixed secret in production.
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+
+if not app.secret_key:
+    raise ValueError("FLASK_SECRET_KEY environment variable must be set for session security.")
 
 # Supabase Configuration
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -26,8 +31,8 @@ SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
     raise ValueError("Supabase environment variables SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.")
 
-print(f"DEBUG: Supabase URL: {SUPABASE_URL}")
-print(f"DEBUG: Supabase Service Role Key (first 10 chars): {SUPABASE_SERVICE_ROLE_KEY[:10]}...")
+# print(f"DEBUG: Supabase URL: {SUPABASE_URL}") # REMOVED FOR PRODUCTION
+# print(f"DEBUG: Supabase Service Role Key (first 10 chars): {SUPABASE_SERVICE_ROLE_KEY[:10]}...") # REMOVED FOR PRODUCTION
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -437,4 +442,4 @@ def admin_dashboard():
 
 # Removed SQLite initialization
 if __name__ == '__main__':
-    app.run(debug=True) # Set debug=False for production
+    app.run(debug=False) # Set debug=False for production

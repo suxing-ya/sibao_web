@@ -15,6 +15,7 @@ env/
 # Others
 *.log
 *.sqlite3
+key&url
 .DS_Store
 
 # MacOS

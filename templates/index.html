@@ -26,11 +26,11 @@
     <div class="max-w-3xl">
       <h1 class="text-4xl md:text-6xl font-extrabold mb-4" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">欢迎来到SIBAOSTUDIO</h1>
       <p class="text-xl md:text-2xl text-gray-200 mb-8" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.5);">开启我们的合作，共创美好！</p>
-      <a href="register.html"
+      <a href="{{ url_for('user_register') }}"
          class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out">
         注册会员
       </a>
-      <a href="login.html"
+      <a href="{{ url_for('user_login') }}"
          class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out ml-4">
         立即登录
       </a>

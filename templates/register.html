@@ -97,7 +97,7 @@
 
     <p class="text-center text-sm text-gray-600">
         已经有账户了？ 
-        <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">立即登录</a>
+        <a href="{{ url_for('user_login') }}" class="font-medium text-indigo-600 hover:text-indigo-500">立即登录</a>
     </p>
   </div>
 
@@ -252,7 +252,7 @@
                                     timer: 3000
                                 }).then(() => {
                                     // Optionally redirect after successful registration
-                                    window.location.href = 'index.html'; // Redirect to home or login
+                                    window.location.href = "{{ url_for('index') }}"; // Redirect to home or login
                                 });
                             }
                         }
