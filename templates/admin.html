@@ -527,6 +527,12 @@
             permissionsDrawerOverlay.addEventListener('click', hidePermissionsDrawer);
         }
 
+        // 为"权限管理"抽屉的"X"按钮添加正确的事件监听器
+        const closePermissionsDrawerXBtn = document.getElementById('closePermissionsDrawerBtn');
+        if (closePermissionsDrawerXBtn) {
+            closePermissionsDrawerXBtn.addEventListener('click', hidePermissionsDrawer);
+        }
+
         // 权限表单提交逻辑
         if (permissionsForm) {
             permissionsForm.addEventListener('submit', async (e) => {

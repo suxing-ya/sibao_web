@@ -440,6 +440,35 @@ def admin_dashboard():
         traceback.print_exc()
         return "加载会员数据失败", 500
 
+@app.route('/api/member/<string:member_id>/permissions', methods=['PUT'])
+@login_required
+@admin_required
+def update_member_permissions(member_id):
+    """
+    更新指定会员的权限。
+    @param {string} member_id - 要更新权限的会员ID。
+    @returns {flask.Response} JSON 响应，指示更新成功或失败。
+    """
+    data = request.get_json()
+    new_permissions = data.get('permissions')
+
+    if not isinstance(new_permissions, list):
+        return jsonify({"message": "请求体中缺少有效的 'permissions' 列表。"}), 400
+
+    try:
+        # Supabase update for the profiles table
+        response = supabase.from_('profiles').update({'permissions': json.dumps(new_permissions)}).eq('id', member_id).execute()
+
+        if response.data:
+            return jsonify({"message": "会员权限已成功更新。"}), 200
+        else:
+            return jsonify({"message": "未能更新会员权限，可能会员不存在或权限已是最新。"}), 404
+    except Exception as e:
+        print(f"更新会员权限时发生错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": f"服务器错误：无法更新会员权限。详情：{e}"}), 500
+
 # Removed SQLite initialization
 if __name__ == '__main__':
     app.run(debug=False) # Set debug=False for production
