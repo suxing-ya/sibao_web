@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- 引入 Supabase JS 库 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     /* Custom styles if needed, Tailwind handles most */
     .table-container {
@@ -37,6 +39,9 @@
         <button class="tab-item py-2 px-4 text-sm font-medium focus:outline-none" id="roleListTab">
           角色列表
           </button>
+        <button class="tab-item py-2 px-4 text-sm font-medium focus:outline-none" id="merchantManagementTab">
+          商家管理
+        </button>
         <button id="logoutBtn" class="ml-auto bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 transition duration-300 text-sm">
           登出 ({{ session.username }})
         </button>
@@ -76,7 +81,7 @@
           </thead>
           <tbody id="membersTableBody" class="bg-white divide-y divide-gray-200">
             {% for member in members %}
-              <tr data-id="{{ member.id }}" data-permissions="{{ member.permissions | tojson | safe }}">
+              <tr data-id="{{ member.id }}" data-permissions="{{ member.permissions | safe }}">
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.username }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.role }}</td>
@@ -101,17 +106,52 @@
         <!-- Role list content will go here -->
         <p class="text-gray-600">角色列表内容待开发...</p>
       </div>
+
+      <div id="merchantManagementContent" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <button id="addNewMerchantBtn" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 text-sm">
+            + 新增商家
+          </button>
+          <div class="relative flex items-center">
+            <input type="text" id="merchantSearchInput" placeholder="请输入商家代号或名称" class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <svg class="absolute left-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家代号</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家名称</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody id="merchantsTableBody" class="bg-white divide-y divide-gray-200">
+              <!-- Merchants data will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
+    // Supabase配置
+    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     document.addEventListener('DOMContentLoaded', () => {
         const logoutBtn = document.getElementById('logoutBtn');
         const accountManagementTab = document.getElementById('accountManagementTab');
         const roleListTab = document.getElementById('roleListTab');
+        const merchantManagementTab = document.getElementById('merchantManagementTab');
         const accountManagementContent = document.getElementById('accountManagementContent');
         const roleListContent = document.getElementById('roleListContent');
+        const merchantManagementContent = document.getElementById('merchantManagementContent');
         const membersTableBody = document.getElementById('membersTableBody');
+        const merchantsTableBody = document.getElementById('merchantsTableBody');
 
         /**
          * 显示 SweetAlert2 提示消息。
@@ -145,15 +185,29 @@
         accountManagementTab.addEventListener('click', () => {
             accountManagementTab.classList.add('active');
             roleListTab.classList.remove('active');
+            merchantManagementTab.classList.remove('active');
             accountManagementContent.classList.remove('hidden');
             roleListContent.classList.add('hidden');
+            merchantManagementContent.classList.add('hidden');
         });
 
         roleListTab.addEventListener('click', () => {
             roleListTab.classList.add('active');
             accountManagementTab.classList.remove('active');
+            merchantManagementTab.classList.remove('active');
             roleListContent.classList.remove('hidden');
             accountManagementContent.classList.add('hidden');
+            merchantManagementContent.classList.add('hidden');
+        });
+
+        merchantManagementTab.addEventListener('click', () => {
+            merchantManagementTab.classList.add('active');
+            accountManagementTab.classList.remove('active');
+            roleListTab.classList.remove('active');
+            merchantManagementContent.classList.remove('hidden');
+            accountManagementContent.classList.add('hidden');
+            roleListContent.classList.add('hidden');
+            loadMerchants(); // Call function to load merchants when tab is clicked
         });
 
         const addSubAccountBtn = document.querySelector('.flex.justify-between.items-center.mb-4 button');
@@ -469,7 +523,7 @@
             'barcode_generator_html': permBarcodeGeneratorHtml
         };
 
-        const showPermissionsDrawer = (memberId, currentPermissions) => {
+        const showPermissionsDrawer = (memberId, currentPermissions, username) => {
             currentMemberIdForPermissions.value = memberId;
             
             // 重置所有复选框状态
@@ -491,6 +545,12 @@
             permissionsDrawer.classList.remove('translate-x-full', 'hidden');
             permissionsDrawer.classList.add('translate-x-0');
             permissionsDrawerOverlay.classList.remove('hidden');
+
+            // 更新权限用户名显示
+            const permissionUserName = document.getElementById('permissionUserName');
+            if (permissionUserName) {
+                permissionUserName.textContent = username;
+            }
         };
 
         const hidePermissionsDrawer = () => {
@@ -513,7 +573,9 @@
                     console.error('解析权限数据失败:', error);
                     currentPermissions = [];
                 }
-                showPermissionsDrawer(memberId, currentPermissions);
+                // 获取账号名
+                const username = row.querySelector('td:first-child').textContent;
+                showPermissionsDrawer(memberId, currentPermissions, username);
             }
         });
 
@@ -570,6 +632,183 @@
                     console.error('更新会员权限时发生错误:', error);
                     showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
                 }
+            });
+        }
+
+        // Merchants Management Logic
+        const addNewMerchantBtn = document.getElementById('addNewMerchantBtn');
+        const newMerchantDrawer = document.getElementById('newMerchantDrawer');
+        const closeMerchantDrawerBtn = document.getElementById('closeMerchantDrawerBtn');
+        const cancelNewMerchantBtn = document.getElementById('cancelNewMerchantBtn');
+        const merchantDrawerOverlay = document.getElementById('merchantDrawerOverlay');
+        const newMerchantForm = document.getElementById('newMerchantForm');
+        const merchantIdToEdit = document.getElementById('merchantIdToEdit');
+        const merchantCodeInput = document.getElementById('merchantCode');
+        const merchantNameInput = document.getElementById('merchantName');
+        const merchantDrawerTitle = document.getElementById('merchantDrawerTitle');
+        const merchantSearchInput = document.getElementById('merchantSearchInput');
+
+        let allMerchants = []; // Store all fetched merchants for client-side filtering
+
+        const showMerchantDrawer = (title, merchant = {}) => {
+            merchantDrawerTitle.textContent = title;
+            merchantIdToEdit.value = merchant.id || '';
+            merchantCodeInput.value = merchant.merchant_code || '';
+            merchantNameInput.value = merchant.merchant_name || '';
+            newMerchantDrawer.classList.remove('translate-x-full', 'hidden');
+            newMerchantDrawer.classList.add('translate-x-0');
+            merchantDrawerOverlay.classList.remove('hidden');
+        };
+
+        const hideMerchantDrawer = () => {
+            newMerchantDrawer.classList.remove('translate-x-0');
+            newMerchantDrawer.classList.add('translate-x-full');
+            merchantDrawerOverlay.classList.add('hidden');
+            newMerchantForm.reset(); // Clear form on close
+        };
+
+        if (addNewMerchantBtn) {
+            addNewMerchantBtn.addEventListener('click', () => showMerchantDrawer('新增商家'));
+        }
+        if (closeMerchantDrawerBtn) {
+            closeMerchantDrawerBtn.addEventListener('click', hideMerchantDrawer);
+        }
+        if (cancelNewMerchantBtn) {
+            cancelNewMerchantBtn.addEventListener('click', hideMerchantDrawer);
+        }
+        if (merchantDrawerOverlay) {
+            merchantDrawerOverlay.addEventListener('click', hideMerchantDrawer);
+        }
+
+        newMerchantForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = merchantIdToEdit.value;
+            const merchant_code = merchantCodeInput.value.trim();
+            const merchant_name = merchantNameInput.value.trim();
+
+            if (!merchant_code || !merchant_name) {
+                showAlert('warning', '输入有误', '商家代号和商家名称不能为空。');
+                return;
+            }
+
+            try {
+                let response;
+                if (id) {
+                    // Update existing merchant
+                    response = await supabase
+                        .from('merchants')
+                        .update({ merchant_code, merchant_name })
+                        .eq('id', id);
+                } else {
+                    // Add new merchant
+                    response = await supabase
+                        .from('merchants')
+                        .insert([{ merchant_code, merchant_name }]);
+                }
+
+                if (response.error) {
+                    if (response.error.code === '23505') { // Unique violation error code for PostgreSQL
+                        showAlert('error', '保存失败', '商家代号已存在，请使用其他代号。');
+                    } else {
+                        showAlert('error', '保存失败', response.error.message);
+                    }
+                } else {
+                    showAlert('success', '保存成功', '商家信息已保存！', 1500);
+                    hideMerchantDrawer();
+                    loadMerchants(); // Reload merchant list
+                }
+            } catch (error) {
+                console.error('保存商家信息时发生错误:', error);
+                showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+            }
+        });
+
+        // Load Merchants Data
+        async function loadMerchants(searchTerm = '') {
+            let query = supabase.from('merchants').select('*').order('merchant_name', { ascending: true });
+
+            if (searchTerm) {
+                query = query.or(`merchant_code.ilike.%${searchTerm}%,merchant_name.ilike.%${searchTerm}%`);
+            }
+
+            const { data, error } = await query;
+            if (error) {
+                console.error('Error fetching merchants:', error.message);
+                merchantsTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
+                return;
+            }
+            allMerchants = data || []; // Store all merchants for search
+            renderMerchantsTable(allMerchants); // Render filtered or all data
+        }
+
+        function renderMerchantsTable(merchantsToRender) {
+            merchantsTableBody.innerHTML = '';
+            if (merchantsToRender.length === 0) {
+                merchantsTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-4">暂无商家数据</td></tr>`;
+                return;
+            }
+            merchantsToRender.forEach(merchant => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${merchant.merchant_code}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${merchant.merchant_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 mr-4 edit-merchant-btn" data-id="${merchant.id}">编辑</button>
+                        <button class="text-red-600 hover:text-red-900 delete-merchant-btn" data-id="${merchant.id}">删除</button>
+                    </td>
+                `;
+                merchantsTableBody.appendChild(tr);
+            });
+
+            // Attach event listeners for newly rendered buttons
+            attachMerchantEventHandlers();
+        }
+
+        function attachMerchantEventHandlers() {
+            merchantsTableBody.querySelectorAll('.edit-merchant-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const merchantId = e.target.dataset.id;
+                    const merchantToEdit = allMerchants.find(m => m.id == merchantId);
+                    if (merchantToEdit) {
+                        showMerchantDrawer('编辑商家', merchantToEdit);
+                    }
+                });
+            });
+
+            merchantsTableBody.querySelectorAll('.delete-merchant-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const merchantId = e.target.dataset.id;
+                    const merchantToDelete = allMerchants.find(m => m.id == merchantId);
+                    const merchantName = merchantToDelete ? merchantToDelete.merchant_name : '该商家';
+
+                    const result = await showAlert('question', '确认删除？', `确定要删除商家 ${merchantName} 吗？此操作不可撤销！`);
+                    if (result.isConfirmed) {
+                        try {
+                            const { error } = await supabase
+                                .from('merchants')
+                                .delete()
+                                .eq('id', merchantId);
+                           
+                            if (error) {
+                                showAlert('error', '删除失败', error.message);
+                            } else {
+                                showAlert('success', '删除成功', '商家已删除！', 1500);
+                                loadMerchants(); // Reload list after deletion
+                            }
+                        } catch (error) {
+                            console.error('删除商家时发生错误:', error);
+                            showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Merchant Search Input Event
+        if (merchantSearchInput) {
+            merchantSearchInput.addEventListener('input', () => {
+                const searchTerm = merchantSearchInput.value.trim();
+                loadMerchants(searchTerm); // Load merchants with search term
             });
         }
     });
@@ -639,7 +878,7 @@
     <!-- Drawer Panel -->
     <div class="absolute right-0 top-0 w-full md:w-1/3 h-full bg-white shadow-xl flex flex-col p-6">
       <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
-        <h2 class="text-xl font-semibold text-gray-800">管理会员权限</h2>
+        <h2 class="text-xl font-semibold text-gray-800">管理会员权限 <span id="permissionUserName" class="text-sm text-gray-500 font-normal ml-2"></span></h2>
         <button id="closePermissionsDrawerBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
           <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
@@ -671,6 +910,41 @@
         <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
           <button type="button" id="cancelPermissionsBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
           <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">保存权限</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- New Merchant Drawer -->
+  <div id="newMerchantDrawer" class="fixed inset-0 z-50 transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+    <!-- Overlay -->
+    <div id="merchantDrawerOverlay" class="absolute inset-0 bg-black bg-opacity-50 hidden"></div>
+
+    <!-- Drawer Panel -->
+    <div class="absolute right-0 top-0 w-full md:w-1/3 h-full bg-white shadow-xl flex flex-col p-6">
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800" id="merchantDrawerTitle">新增商家</h2>
+        <button id="closeMerchantDrawerBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="newMerchantForm" class="flex-grow space-y-4">
+        <input type="hidden" id="merchantIdToEdit">
+        <div>
+          <label for="merchantCode" class="block text-sm font-medium text-gray-700">*商家代号</label>
+          <input type="text" id="merchantCode" name="merchant_code" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label for="merchantName" class="block text-sm font-medium text-gray-700">*商家名称</label>
+          <input type="text" id="merchantName" name="merchant_name" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
+          <button type="button" id="cancelNewMerchantBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">保存商家</button>
         </div>
       </form>
     </div>

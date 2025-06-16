@@ -44,6 +44,54 @@
       background-color: #f3f4f6; /* Tailwind gray-100 */
       transition: background-color 0.2s ease-in-out;
     }
+    /* Detail Sidebar Styles */
+    #detailSidebar {
+      width: 100%; /* Default for mobile */
+      max-width: 500px; /* Max width for desktop */
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+
+    @media (min-width: 768px) { /* Medium screens and up */
+      #detailSidebar {
+        width: 60%; /* Adjust as needed */
+      }
+    }
+
+    @media (min-width: 1024px) { /* Large screens and up */
+      #detailSidebar {
+        width: 40%; /* Adjust as needed */
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body > *:not(#detailSidebar) {
+        display: none !important;
+      }
+      #detailSidebar {
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: none !important;
+        box-shadow: none !important;
+        margin: 0;
+        padding: 0;
+        background-color: white;
+      }
+      /* Ensure tables fill width and content is readable */
+      #detailSidebar table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      #detailSidebar th,
+      #detailSidebar td {
+        padding: 8px; /* Adjust padding for print readability */
+        border: 1px solid #ccc;
+      }
+      #detailSidebar .flex.justify-end.gap-4.mt-6 { /* Hide buttons on print */
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans">
@@ -56,25 +104,46 @@
       </a>
     </div>
     
-    <!-- Query Section -->
-    <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm flex flex-wrap items-center justify-center gap-4">
-      <span class="text-gray-700 font-medium">查询时间范围:</span>
-      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近1天</button>
-      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近7天</button>
-      <button class="query-btn bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300">近10天</button>
-      <!-- Add more query options as needed -->
+    <!-- 查询区域 -->
+    <div class="flex flex-wrap items-center justify-between mb-6 gap-3 p-4 bg-gray-50 rounded-lg shadow-sm text-sm">
+      <button id="addNewRowBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 text-sm">新增</button>
+      
+      <div class="flex items-center gap-3">
+        <span class="text-gray-700 font-medium">查询时间范围:</span>
+        <button class="query-date-btn bg-blue-50 text-blue-700 px-3 py-1 rounded-md border border-blue-200 hover:bg-blue-100 transition duration-300 text-sm" data-days="7">近7天</button>
+        <button class="query-date-btn bg-blue-50 text-blue-700 px-3 py-1 rounded-md border border-blue-200 hover:bg-blue-100 transition duration-300 text-sm" data-days="10">近10天</button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label for="mainTrackingIdFilter" class="text-gray-700 font-medium">主运单号 ID:</label>
+        <input type="text" id="mainTrackingIdFilter" placeholder="请输入主运单号 ID" class="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm w-48">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label for="transportStatusFilter" class="text-gray-700 font-medium">运输状态:</label>
+        <select id="transportStatusFilter" class="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
+          <option value="">全部</option>
+          <option value="签收">签收</option>
+          <option value="途中">途中</option>
+        </select>
+      </div>
+
+      <button id="resetFiltersBtn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-300 text-sm">重置</button>
     </div>
 
     <div class="table-container">
       <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
         <thead class="bg-gray-50">
           <tr>
+            <th rowspan="2" class="px-3 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 50px;">
+                <input type="checkbox" id="masterCheckbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+            </th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 150px;">中国寄件时间</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 160px;">主运单号ID</th>
-            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 160px;">货件ID</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1">箱麦</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1">箱件数</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 80px;">内装件数</th>
+            <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 100px;">明细表</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-1" style="min-width: 100px;">运输状态</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-2" style="min-width: 150px;">美国签收时间</th>
             <th rowspan="2" class="px-6 py-3 border-r border-gray-300 text-center text-sm font-medium text-white uppercase tracking-wider header-group-2">实收箱数</th>
@@ -92,13 +161,152 @@
     </div>
   </div>
 
+  <!-- Detail Sidebar HTML Structure -->
+  <div id="detailSidebar" class="fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/3 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50 overflow-y-auto p-6">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h2 class="text-2xl font-bold text-gray-800">发货明细</h2>
+      <button id="closeDetailSidebarBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Record Details (Read-Only) -->
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm grid grid-cols-2 gap-2 text-sm text-gray-700">
+        <div><span class="font-medium">中国寄件时间:</span> <span id="detailCnSendDate"></span></div>
+        <div><span class="font-medium">主运单号 ID:</span> <span id="detailMainTrackingId"></span></div>
+        <div><span class="font-medium">箱麦:</span> <span id="detailBoxCode"></span></div>
+        <div><span class="font-medium">箱件数:</span> <span id="detailBoxCount"></span></div>
+        <div><span class="font-medium">内装件数:</span> <span id="detailInnerCount"></span></div>
+    </div>
+
+    <!-- Detail Table 1 (Shipment IDs) -->
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center justify-between">
+        <span>货件 ID 列表</span>
+        <span id="autoIdentifyShipmentIdBtn" class="text-blue-500 text-sm cursor-pointer hover:underline">自动识别货件ID</span>
+      </h3>
+      <table id="detailTable1" class="min-w-full divide-y divide-gray-200 border border-gray-300">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">货件 ID</th>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+          </tr>
+        </thead>
+        <tbody id="detailTableBody1" class="bg-white divide-y divide-gray-200">
+          <!-- Shipment ID rows will be populated here -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="px-3 py-2 text-right text-sm font-bold text-gray-900 border-t border-gray-300">合计：<span id="detailShipmentIdCount">0</span> 个货件ID</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Detail Table 2 (Sub-table) -->
+    <div class="mb-6">
+      <table id="detailTable2" class="min-w-full divide-y divide-gray-200 border border-gray-300">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">商家</th>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">数量</th>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">扫描渠道</th>
+            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">备注</th>
+          </tr>
+        </thead>
+        <tbody id="detailTableBody2" class="bg-white divide-y divide-gray-200">
+          <!-- Detail sub-rows will be populated here -->
+          <tr>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="px-3 py-2 text-center text-sm font-bold text-gray-900 border-t border-gray-300">合计</td>
+            <td id="detailQuantityTotal" class="px-3 py-2 text-center text-sm font-bold text-gray-900 border-t border-gray-300">0</td>
+            <td colspan="2" class="px-3 py-2 border-t border-gray-300"></td> <!-- Empty cell for remaining columns -->
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Print and Export Buttons -->
+    <div class="flex justify-end gap-4 mt-6">
+      <button id="editDetailBtn" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition duration-300">编辑</button>
+      <button id="saveDetailBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300 opacity-50 cursor-not-allowed" disabled>保存</button>
+      <button id="printDetailBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition duration-300">打印</button>
+      <button id="exportExcelBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300">导出 Excel</button>
+    </div>
+  </div>
+
+  <!-- Context Menu for Detail Table 1 -->
+  <div id="detailTable1ContextMenu" class="absolute bg-white border border-gray-300 rounded shadow-lg z-50 hidden">
+    <ul class="py-1">
+      <li><a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-action="insert-row">插入一行</a></li>
+      <li><a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-action="delete-row">删除行</a></li>
+    </ul>
+  </div>
+
+  <!-- Auto Identify Shipment ID Dialog -->
+  <div id="autoIdentifyDialog" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-auto">
+      <h3 class="text-xl font-bold mb-4">自动识别货件 ID</h3>
+      <textarea id="shipmentIdInputArea" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" rows="6" placeholder="请输入货件 ID，用空格或换行分隔..."></textarea>
+      <div class="flex justify-end gap-3">
+        <button id="cancelIdentifyBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">取消</button>
+        <button id="generateShipmentIdsBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">识别并生成</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
+<!-- Merchants Datalist for Detail Table 2 -->
+<datalist id="merchantsList"></datalist>
 <script>
     // Supabase配置
     const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allTableData = []; // Store all fetched data for client-side filtering
+    let currentFilters = {
+        dateRange: 0, // 0 for all, 7 for last 7 days, 10 for last 10 days
+        mainTrackingId: '',
+        transportStatus: ''
+    };
+
+    // 函数：加载商家数据并填充datalist
+    async function loadMerchantsDatalist() {
+        const merchantsList = document.getElementById('merchantsList');
+        merchantsList.innerHTML = ''; // 清空现有选项
+
+        try {
+            const { data, error } = await supabase
+                .from('merchants')
+                .select('merchant_code, merchant_name')
+                .order('merchant_name', { ascending: true });
+
+            if (error) {
+                console.error('Error fetching merchants:', error.message);
+                // 可以选择显示一个用户友好的错误消息
+            } else {
+                data.forEach(merchant => {
+                    const option = document.createElement('option');
+                    option.value = merchant.merchant_name; // 当用户选择时，输入框填充商家名称
+                    option.textContent = `${merchant.merchant_code} - ${merchant.merchant_name}`; // 下拉列表中显示代号和名称
+                    merchantsList.appendChild(option);
+                });
+            }
+        } catch (e) {
+            console.error("Error loading merchants datalist:", e);
+        }
+    }
 
     // Helper function to get Tailwind CSS classes for status background and text color
     function getStatusBgClass(status) {
@@ -118,10 +326,10 @@
     const fieldMap = [
       'cn_send_date',
       'main_tracking_id',
-      'shipment_id',
       'box_code',
       'box_count',
       'inner_count',
+      'detail_table',
       'status',
       'us_receive_date',
       'us_box_count',
@@ -142,20 +350,34 @@
       const tbody = document.querySelector('table tbody');
       tbody.innerHTML = '';
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
         return;
       }
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
         return;
       }
       data.forEach(row => tbody.appendChild(createRow(row)));
       updatePaginationControls(count);
+
+      // Store the fetched data for client-side filtering
+      allTableData = data;
+      applyFiltersAndRenderTable(); // Apply filters initially after loading
     }
 
     // 创建一行（可编辑）
     function createRow(row = {}) {
       const tr = document.createElement('tr');
+      // 添加选择复选框的td
+      const tdCheckbox = document.createElement('td');
+      tdCheckbox.className = 'px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out';
+      checkbox.addEventListener('change', updateMasterCheckbox);
+      tdCheckbox.appendChild(checkbox);
+      tr.appendChild(tdCheckbox);
+
       fieldMap.forEach((field, index) => {
         const td = document.createElement('td');
         let tdClasses = 'px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center';
@@ -164,13 +386,131 @@
         }
         td.className = tdClasses;
         
-        if (field === 'status') {
+        if (field === 'detail_table') {
+          const detailButton = document.createElement('button');
+          detailButton.textContent = '查看';
+          detailButton.className = 'bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition duration-300';
+          detailButton.addEventListener('click', async () => {
+            const detailSidebar = document.getElementById('detailSidebar');
+            detailSidebar.classList.remove('translate-x-full');
+            // Exit edit mode when opening sidebar (if it was somehow in edit mode previously)
+            const editBtn = document.getElementById('editDetailBtn');
+            const saveBtn = document.getElementById('saveDetailBtn');
+            if (editBtn.textContent === '取消') {
+                editBtn.click(); // Simulate click to toggle back to '编辑' and disable save
+            }
+
+            // Populate Main Record Details
+            document.getElementById('detailCnSendDate').textContent = row.cn_send_date || '';
+            document.getElementById('detailMainTrackingId').textContent = row.main_tracking_id || '';
+            document.getElementById('detailBoxCode').textContent = row.box_code || '';
+            document.getElementById('detailBoxCount').textContent = row.box_count || '';
+            document.getElementById('detailInnerCount').textContent = row.inner_count || '';
+
+            // Store the ID of the main row being viewed for future backend operations
+            detailSidebar.dataset.mainRowId = row.id;
+
+            // Populate Detail Table 1 (Shipment IDs) from temu_shipment_ids table
+            const tbody1 = document.getElementById('detailTableBody1');
+            tbody1.innerHTML = ''; // Clear previous content
+
+            try {
+                const { data: shipmentIdsData, error: shipmentIdsError } = await supabase
+                    .from('temu_shipment_ids')
+                    .select('shipment_id_value')
+                    .eq('workflow_id', row.id)
+                    .order('id', { ascending: true });
+
+                if (shipmentIdsError) {
+                    console.error('Error fetching shipment IDs:', shipmentIdsError.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '加载货件ID失败',
+                        text: shipmentIdsError.message
+                    });
+                } else {
+                    if (shipmentIdsData && shipmentIdsData.length > 0) {
+                        shipmentIdsData.forEach(item => {
+                            tbody1.appendChild(createDetailTable1Row(item.shipment_id_value, false)); // Initially not editable
+                        });
+                    } else {
+                        // If no shipment IDs found, add one empty editable row for input
+                        tbody1.appendChild(createDetailTable1Row('', false));
+                    }
+                }
+            } catch (e) {
+                console.error("Error in fetching shipment IDs:", e);
+                Swal.fire({
+                    icon: 'error',
+                    title: '加载货件ID异常',
+                    text: e.message
+                });
+            }
+            updateShipmentIdCount(); // Update total count after population
+
+            // Populate Detail Table 2 (Sub-table) from temu_shipment_details table
+            const tbody2 = document.getElementById('detailTableBody2');
+            tbody2.innerHTML = ''; // Clear previous content
+
+            try {
+                const { data: detailsData, error: detailsError } = await supabase
+                    .from('temu_shipment_details')
+                    .select('*') // Select all columns for details
+                    .eq('workflow_id', row.id)
+                    .order('id', { ascending: true });
+
+                if (detailsError) {
+                    console.error('Error fetching shipment details:', detailsError.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '加载发货明细失败',
+                        text: detailsError.message
+                    });
+                } else {
+                    let totalQuantity = 0;
+                    if (detailsData && detailsData.length > 0) {
+                        detailsData.forEach(item => {
+                            const tr2 = document.createElement('tr');
+                            tr2.innerHTML = `
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.merchant || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.quantity || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.scan_channel || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.notes || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                            `;
+                            tbody2.appendChild(tr2);
+                            totalQuantity += (item.quantity || 0);
+                        });
+                    } else {
+                        // If no details found, add one empty row for input
+                        const tr2 = document.createElement('tr');
+                        tr2.innerHTML = `
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                        `;
+                        tbody2.appendChild(tr2);
+                    }
+                    document.getElementById('detailQuantityTotal').textContent = totalQuantity;
+                }
+            } catch (e) {
+                console.error("Error in fetching shipment details:", e);
+                Swal.fire({
+                    icon: 'error',
+                    title: '加载发货明细异常',
+                    text: e.message
+                });
+            }
+          });
+          td.appendChild(detailButton);
+        } else if (field === 'status') {
           const statusOptions = ['途中', '签收'];
           const selectElement = document.createElement('select');
           
           const initialStatusValue = row[field] || '途中';
           // 移除select元素的边框样式，只保留必要的布局和焦点样式
           selectElement.className = `w-full h-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-sm ${getStatusBgClass(initialStatusValue)}`;
+          selectElement.disabled = true; // 默认禁用
           
           statusOptions.forEach(optionText => {
             const optionElement = document.createElement('option');
@@ -197,6 +537,7 @@
           const inputElement = document.createElement('input');
           inputElement.type = inputType;
           inputElement.value = displayValue;
+          inputElement.readOnly = true; // 默认只读
           // 移除input元素的边框样式，只保留必要的布局和焦点样式
           inputElement.className = 'w-full h-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center placeholder-gray-500 text-sm';
           td.appendChild(inputElement);
@@ -209,30 +550,67 @@
       tdOp.className = 'table-ops px-6 py-1';
       tdOp.innerHTML = `
         <div class="btn-group">
+          <button class="edit-btn bg-yellow-500 text-white rounded">编辑</button>
           <button class="save-btn bg-green-500 text-white rounded">保存</button>
           <button class="delete-btn bg-red-500 text-white rounded">删除</button>
         </div>
       `;
       tr.appendChild(tdOp);
       tr.dataset.id = row.id || '';
+      tr.dataset.editMode = 'false'; // 新增：默认非编辑模式
       return tr;
     }
 
     // 新增一行
     function addNewRow() {
       const tbody = document.querySelector('table tbody');
-      tbody.insertBefore(createRow(), tbody.firstChild);
+      const newRow = createRow();
+      // 新增的行默认进入编辑模式
+      toggleEditMode(newRow, true);
+      tbody.insertBefore(newRow, tbody.firstChild);
+    }
+
+    // 切换编辑模式
+    function toggleEditMode(tr, enable) {
+      const inputs = tr.querySelectorAll('input');
+      const selects = tr.querySelectorAll('select');
+      const editButton = tr.querySelector('.edit-btn');
+
+      inputs.forEach(input => input.readOnly = !enable);
+      selects.forEach(select => select.disabled = !enable);
+
+      if (enable) {
+        editButton.textContent = '取消';
+        editButton.classList.remove('bg-yellow-500');
+        editButton.classList.add('bg-gray-500');
+        tr.dataset.editMode = 'true';
+      } else {
+        editButton.textContent = '编辑';
+        editButton.classList.remove('bg-gray-500');
+        editButton.classList.add('bg-yellow-500');
+        tr.dataset.editMode = 'false';
+      }
     }
 
     // 保存（插入或更新）
     async function saveRow(tr) {
+      if (tr.dataset.editMode === 'false') {
+        Swal.fire({
+          icon: 'info',
+          title: '请先点击编辑按钮',
+          text: '请先点击编辑按钮才能保存修改。',
+          confirmButtonText: '确定'
+        });
+        return;
+      }
+
       try {
         const inputs = tr.querySelectorAll('input, select');
         const rowData = {};
         fieldMap.forEach((field, idx) => {
           let val = inputs[idx].value;
           // 根据字段名判断是否为数字类型，并进行转换
-          if (field.includes('count')) val = val ? parseInt(val) : null;
+          if (field.includes('count') || field.includes('actual_count')) val = val ? parseInt(val) : null;
           if (field.includes('date')) val = val || null;
           rowData[field] = val;
         });
@@ -258,6 +636,9 @@
             timer: 1500
           });
           await loadTable();
+          if (tr.dataset.editMode === 'true') { // 保存成功后退出编辑模式
+            toggleEditMode(tr, false);
+          }
         }
       } catch (e) {
         console.error("Error in saveRow:", e); // 将错误输出到控制台
@@ -289,11 +670,8 @@
       // 加载数据
       loadTable();
       // 新增按钮
-      const addBtn = document.createElement('button');
-      addBtn.textContent = '新增';
-      addBtn.className = 'mb-4 bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition';
+      const addBtn = document.getElementById('addNewRowBtn');
       addBtn.onclick = addNewRow;
-      document.querySelector('.container').insertBefore(addBtn, document.querySelector('.table-container'));
 
       // 添加分页控制容器
       const paginationContainer = document.createElement('div');
@@ -319,15 +697,54 @@
         loadTable();
       });
 
-      // 委托事件
-      document.querySelector('table tbody').addEventListener('click', async e => {
-        const tr = e.target.closest('tr');
-        if (e.target.classList.contains('save-btn')) {
+      // 事件委托：编辑、保存、删除按钮
+      document.querySelector('table tbody').addEventListener('click', async function(event) {
+        const tr = event.target.closest('tr');
+        if (!tr) return;
+
+        if (event.target.classList.contains('edit-btn')) {
+          toggleEditMode(tr, tr.dataset.editMode === 'false');
+        } else if (event.target.classList.contains('save-btn')) {
           await saveRow(tr);
-        } else if (e.target.classList.contains('delete-btn')) {
-          await deleteRow(tr);
+          if (tr.dataset.editMode === 'true') { // 保存成功后退出编辑模式
+            toggleEditMode(tr, false);
+          }
+        } else if (event.target.classList.contains('delete-btn')) {
+          // 删除确认
+          const confirmDelete = await Swal.fire({
+            title: '确定删除吗？',
+            text: "此操作不可撤销！",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '是的，删除！',
+            cancelButtonText: '取消'
+          });
+          if (confirmDelete.isConfirmed) {
+            // 执行删除操作
+            const { error } = await supabase.from('temu_workflow').delete().eq('id', tr.dataset.id);
+            if (error) {
+              Swal.fire({
+                icon: 'error',
+                title: '删除失败',
+                text: `删除失败: ${error.message}`
+              });
+            } else {
+              tr.remove(); // 从DOM中移除行
+              Swal.fire(
+                '已删除!',
+                '您的记录已被删除。',
+                'success'
+              );
+              loadTable(); // 重新加载表格以更新分页和行数
+            }
+          }
         }
       });
+
+      // 加载商家datalist
+      loadMerchantsDatalist();
     });
 
     // 更新分页控制状态
@@ -353,5 +770,533 @@
       } else {
         nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
       }
+    }
+
+    // Helper function to update the state of the master checkbox based on individual checkboxes
+    function updateMasterCheckbox() {
+      const allCheckboxes = document.querySelectorAll('table tbody input[type="checkbox"]');
+      const checkedCheckboxes = document.querySelectorAll('table tbody input[type="checkbox"]:checked');
+      const masterCheckbox = document.getElementById('masterCheckbox');
+
+      if (masterCheckbox) {
+        if (allCheckboxes.length === checkedCheckboxes.length && allCheckboxes.length > 0) {
+          masterCheckbox.checked = true;
+          masterCheckbox.indeterminate = false;
+        } else if (checkedCheckboxes.length > 0) {
+          masterCheckbox.checked = false;
+          masterCheckbox.indeterminate = true;
+        } else {
+          masterCheckbox.checked = false;
+          masterCheckbox.indeterminate = false;
+        }
+      }
+    }
+
+    // Master checkbox event listener
+    document.addEventListener('DOMContentLoaded', function() {
+      const masterCheckbox = document.getElementById('masterCheckbox');
+      if (masterCheckbox) {
+        masterCheckbox.addEventListener('change', function() {
+          const isChecked = this.checked;
+          document.querySelectorAll('table tbody input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = isChecked;
+          });
+        });
+      }
+
+      // Detail sidebar close button
+      const closeDetailSidebarBtn = document.getElementById('closeDetailSidebarBtn');
+      if (closeDetailSidebarBtn) {
+        closeDetailSidebarBtn.addEventListener('click', () => {
+          const detailSidebar = document.getElementById('detailSidebar');
+          detailSidebar.classList.add('translate-x-full');
+          // Exit edit mode when closing sidebar
+          const editBtn = document.getElementById('editDetailBtn');
+          if (editBtn.textContent === '取消') {
+              editBtn.click(); // Simulate click to toggle back to '编辑'
+          }
+        });
+      }
+
+      // Print button for detail sidebar
+      const printDetailBtn = document.getElementById('printDetailBtn');
+      if (printDetailBtn) {
+        printDetailBtn.addEventListener('click', () => {
+          window.print();
+        });
+      }
+
+      // Export to Excel button for detail sidebar
+      const exportExcelBtn = document.getElementById('exportExcelBtn');
+      if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', () => {
+          let csv = [];
+          // Get headers for table 1
+          const table1Headers = Array.from(document.getElementById('detailTable1').querySelectorAll('thead th')).map(th => th.textContent.trim());
+          csv.push(table1Headers.join(','));
+          // Get data for table 1 (from input values)
+          document.querySelectorAll('#detailTableBody1 tr').forEach(row => {
+            const rowData = Array.from(row.querySelectorAll('input[type="text"]')).map(input => `"${input.value.trim().replace(/"/g, '""')}"`); // Escape quotes
+            csv.push(rowData.join(','));
+          });
+          // Get headers for table 2
+          const table2Headers = Array.from(document.getElementById('detailTable2').querySelectorAll('thead th')).map(th => th.textContent.trim());
+          csv.push([]); // Add an empty row for separation
+          csv.push(table2Headers.join(','));
+          // Get data for table 2 (from input values)
+          document.querySelectorAll('#detailTableBody2 tr').forEach(row => {
+            const rowData = Array.from(row.querySelectorAll('input[type="text"]')).map(input => `"${input.value.trim().replace(/"/g, '""')}"`); // Escape quotes
+            csv.push(rowData.join(','));
+          });
+
+          // Add total row for table 2
+          const totalRow = document.getElementById('detailQuantityTotal');
+          if (totalRow) {
+              const totalRowData = ["合计", `"${totalRow.textContent.trim().replace(/"/g, '""')}"`, '', '']; // Adjust colspan for total row
+              csv.push(totalRowData.join(','));
+          }
+
+          const csvString = csv.join('\n');
+          const blob = new Blob(["\ufeff", csvString], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Chinese characters
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '发货明细.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      // Edit button for detail sidebar
+      const editDetailBtn = document.getElementById('editDetailBtn');
+      const saveDetailBtn = document.getElementById('saveDetailBtn');
+      if (editDetailBtn) {
+          editDetailBtn.addEventListener('click', function() {
+              const isEnteringEditMode = this.textContent === '编辑';
+              console.log("Edit button clicked. Entering edit mode:", isEnteringEditMode); // Debug log
+
+              // Toggle readonly for shipment_id inputs
+              document.querySelectorAll('#detailTableBody1 .shipment-id-input').forEach(input => {
+                  input.readOnly = !isEnteringEditMode;
+                  if (isEnteringEditMode) {
+                      input.classList.add('border', 'border-blue-400'); // Add border when editable
+                  } else {
+                      input.classList.remove('border', 'border-blue-400'); // Remove border when readonly
+                  }
+                  console.log("Shipment ID input readonly set to:", input.readOnly, ", value:", input.value); // Debug log
+              });
+
+              // Table 2 editable fields (merchant, quantity, scan_channel, notes - all columns)
+              document.querySelectorAll('#detailTableBody2 tr').forEach(rowEl => {
+                  const inputs = rowEl.querySelectorAll('input[type="text"]');
+                  inputs.forEach(input => {
+                      input.readOnly = !isEnteringEditMode;
+                      if (isEnteringEditMode) {
+                          input.classList.add('border', 'border-blue-400'); // Add border when editable
+                      } else {
+                          input.classList.remove('border', 'border-blue-400'); // Remove border when readonly
+                      }
+                      console.log("Table 2 input readonly set to:", input.readOnly, ", value:", input.value); // Debug log
+                  });
+              });
+
+              this.textContent = isEnteringEditMode ? '取消' : '编辑';
+              this.classList.toggle('bg-yellow-500', !isEnteringEditMode);
+              this.classList.toggle('bg-gray-500', isEnteringEditMode);
+
+              // Enable/disable save button
+              saveDetailBtn.disabled = !isEnteringEditMode;
+              saveDetailBtn.classList.toggle('opacity-50', !isEnteringEditMode);
+              saveDetailBtn.classList.toggle('cursor-not-allowed', !isEnteringEditMode);
+          });
+      }
+
+      // Save button for detail sidebar
+      if (saveDetailBtn) {
+          saveDetailBtn.addEventListener('click', async function() {
+              const mainRowId = document.getElementById('detailSidebar').dataset.mainRowId;
+              if (!mainRowId) {
+                  Swal.fire({
+                      icon: 'error',
+                      title: '保存失败',
+                      text: '无法获取主记录ID，请刷新页面。'
+                  });
+                  return;
+              }
+              
+              // Get shipment IDs from detailTable1
+              const shipmentIdsToSave = Array.from(document.querySelectorAll('#detailTableBody1 .shipment-id-input'))
+                                              .map(input => input.value.trim())
+                                              .filter(id => id); // Filter out empty strings
+
+              // Get data from detailTable2
+              const table2Rows = document.querySelectorAll('#detailTableBody2 tr');
+              const table2DataToSave = [];
+              table2Rows.forEach(rowEl => {
+                  const inputs = rowEl.querySelectorAll('input[type="text"]');
+                  if (inputs.length === 4) { // Ensure all 4 expected inputs are present
+                      const merchant = inputs[0].value.trim();
+                      const quantity = parseInt(inputs[1].value.trim());
+                      const scan_channel = inputs[2].value.trim();
+                      const notes = inputs[3].value.trim();
+
+                      // Only add row if at least merchant or quantity is provided
+                      if (merchant || !isNaN(quantity)) {
+                          table2DataToSave.push({
+                              workflow_id: mainRowId,
+                              merchant: merchant,
+                              quantity: isNaN(quantity) ? null : quantity, // Store null if not a valid number
+                              scan_channel: scan_channel,
+                              notes: notes
+                          });
+                      }
+                  }
+              });
+
+              console.log("Saving for main row ID:", mainRowId);
+              console.log("Shipment IDs to save:", shipmentIdsToSave);
+              console.log("Table 2 Data (to save):", table2DataToSave);
+
+              try {
+                  // 1. Delete existing shipment IDs for this workflow_id
+                  const { error: deleteShipmentIdsError } = await supabase
+                      .from('temu_shipment_ids')
+                      .delete()
+                      .eq('workflow_id', mainRowId);
+
+                  if (deleteShipmentIdsError) throw deleteShipmentIdsError;
+
+                  // 2. Insert new shipment IDs (if any)
+                  if (shipmentIdsToSave.length > 0) {
+                      const shipmentIdObjects = shipmentIdsToSave.map(id => ({
+                          workflow_id: mainRowId,
+                          shipment_id_value: id
+                      }));
+                      const { error: insertShipmentIdsError } = await supabase
+                          .from('temu_shipment_ids')
+                          .insert(shipmentIdObjects);
+                      if (insertShipmentIdsError) throw insertShipmentIdsError;
+                  }
+
+                  // 3. Delete existing shipment details for this workflow_id
+                  const { error: deleteDetailsError } = await supabase
+                      .from('temu_shipment_details')
+                      .delete()
+                      .eq('workflow_id', mainRowId);
+                  
+                  if (deleteDetailsError) throw deleteDetailsError;
+
+                  // 4. Insert new shipment details (if any)
+                  if (table2DataToSave.length > 0) {
+                      const { error: insertDetailsError } = await supabase
+                          .from('temu_shipment_details')
+                          .insert(table2DataToSave);
+                      if (insertDetailsError) throw insertDetailsError;
+                  }
+
+                  Swal.fire({
+                      icon: 'success',
+                      title: '明细已保存',
+                      showConfirmButton: false,
+                      timer: 1500
+                  });
+
+                  // After saving, exit edit mode
+                  editDetailBtn.click(); // Simulate click to toggle back to '编辑'
+
+                  // Reload the main table to reflect any potential changes (e.g., if a detail row affects main table display)
+                  loadTable();
+
+              } catch (error) {
+                  console.error("Error saving details:", error.message);
+                  Swal.fire({
+                      icon: 'error',
+                      title: '保存失败',
+                      text: '保存过程中出现错误: ' + error.message
+                  });
+              }
+          });
+      }
+
+      // Initial load of table data
+      loadTable();
+      // 新增按钮
+      const addBtn = document.getElementById('addNewRowBtn');
+      addBtn.onclick = addNewRow;
+    });
+
+    // Helper function to create a new row for Detail Table 1 (Shipment IDs)
+    function createDetailTable1Row(shipmentId = '', isEditable = false) {
+        console.log("Creating Detail Table 1 row, isEditable:", isEditable); // Debug log
+        const tr = document.createElement('tr');
+        const displayValue = shipmentId === null || shipmentId === undefined ? '' : shipmentId;
+        tr.innerHTML = `
+          <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${displayValue}" class="w-full h-full text-center bg-transparent border-none focus:outline-none shipment-id-input ${isEditable ? 'border border-blue-400' : ''}" ${isEditable ? '' : 'readonly'}></td>
+          <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center">
+            <button class="delete-shipment-id-btn bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300">删除</button>
+          </td>
+        `;
+        return tr;
+    }
+
+    // Helper function to update the total count of shipment IDs
+    function updateShipmentIdCount() {
+        const count = document.querySelectorAll('#detailTableBody1 tr').length;
+        document.getElementById('detailShipmentIdCount').textContent = count;
+    }
+
+    // Context menu for Detail Table 1 (Shipment IDs)
+    const detailTable1Body = document.getElementById('detailTableBody1');
+    const detailTable1ContextMenu = document.getElementById('detailTable1ContextMenu');
+    let currentRowForContextMenu = null; // To store the row that was right-clicked
+
+    if (detailTable1Body && detailTable1ContextMenu) {
+        detailTable1Body.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); // Prevent default context menu
+            currentRowForContextMenu = e.target.closest('tr');
+
+            if (currentRowForContextMenu) {
+                detailTable1ContextMenu.style.left = `${e.clientX}px`;
+                detailTable1ContextMenu.style.top = `${e.clientY}px`;
+                detailTable1ContextMenu.classList.remove('hidden');
+            }
+        });
+
+        // Handle context menu item clicks
+        detailTable1ContextMenu.addEventListener('click', function(e) {
+            e.preventDefault();
+            detailTable1ContextMenu.classList.add('hidden'); // Hide menu after click
+
+            const action = e.target.dataset.action;
+            if (currentRowForContextMenu && action) {
+                if (action === 'insert-row') {
+                    // Ensure it's in edit mode to insert rows
+                    if (editDetailBtn.textContent !== '取消') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: '请先点击编辑按钮',
+                            text: '请先点击编辑按钮才能插入货件 ID。'
+                        });
+                        return;
+                    }
+                    const newRow = createDetailTable1Row('', true); // New row is always editable when inserted via context menu
+                    currentRowForContextMenu.parentNode.insertBefore(newRow, currentRowForContextMenu.nextSibling);
+                    updateShipmentIdCount();
+                } else if (action === 'delete-row') {
+                    // Check if it's the last remaining row before deletion
+                    const currentRows = detailTable1Body.querySelectorAll('tr');
+                    if (currentRows.length <= 1) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '无法删除',
+                            text: '至少需要保留一个货件 ID。',
+                            confirmButtonText: '确定'
+                        });
+                        console.log("Cannot delete: Last remaining shipment ID row via context menu.");
+                        return;
+                    }
+                    currentRowForContextMenu.remove();
+                    updateShipmentIdCount();
+                }
+            }
+            currentRowForContextMenu = null; // Reset
+        });
+
+        // Hide context menu when clicking elsewhere on the document
+        document.addEventListener('click', function(e) {
+            if (!detailTable1ContextMenu.contains(e.target)) {
+                detailTable1ContextMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    // Auto Identify Shipment ID feature
+    const autoIdentifyShipmentIdBtn = document.getElementById('autoIdentifyShipmentIdBtn');
+    const autoIdentifyDialog = document.getElementById('autoIdentifyDialog');
+    const cancelIdentifyBtn = document.getElementById('cancelIdentifyBtn');
+    const generateShipmentIdsBtn = document.getElementById('generateShipmentIdsBtn');
+    const shipmentIdInputArea = document.getElementById('shipmentIdInputArea');
+
+    if (autoIdentifyShipmentIdBtn && autoIdentifyDialog) {
+        autoIdentifyShipmentIdBtn.addEventListener('click', () => {
+            // Only allow auto-identification if in edit mode
+            if (editDetailBtn.textContent !== '取消') {
+                Swal.fire({
+                    icon: 'info',
+                    title: '请先点击编辑按钮',
+                    text: '请先点击编辑按钮才能自动识别货件 ID。'
+                });
+                return;
+            }
+            autoIdentifyDialog.classList.remove('hidden');
+            shipmentIdInputArea.value = ''; // Clear previous input
+        });
+
+        cancelIdentifyBtn.addEventListener('click', () => {
+            autoIdentifyDialog.classList.add('hidden');
+        });
+
+        generateShipmentIdsBtn.addEventListener('click', () => {
+            const inputText = shipmentIdInputArea.value.trim();
+            if (inputText) {
+                // Optimize: Grab only 12-digit number strings that start with '8'
+                const allParsedIds = inputText.split(/[\s\n]+/).filter(id => {
+                    // Regex: ^8 checks for start with 8, \d{11} checks for 11 more digits, $ checks for end of string
+                    return /^8\d{11}$/.test(id);
+                });
+
+                if (allParsedIds.length === 0) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: '未识别到有效货件 ID',
+                        text: '请输入以8开头的12位数字串，用空格或换行分隔。'
+                    });
+                    autoIdentifyDialog.classList.add('hidden');
+                    return; // No valid IDs to process
+                }
+
+                const currentFirstInput = detailTable1Body.querySelector('tr:first-child .shipment-id-input');
+                let startIndexForAppend = 0;
+
+                if (currentFirstInput && currentFirstInput.value.trim() === '') {
+                    // First row is empty, fill it with the first parsed ID
+                    currentFirstInput.value = allParsedIds[0];
+                    currentFirstInput.readOnly = false; // Make it editable
+                    currentFirstInput.classList.add('border', 'border-blue-400');
+                    startIndexForAppend = 1; // Start appending from the second parsed ID
+                } else if (!currentFirstInput && allParsedIds.length > 0) {
+                     // No existing rows, and parsed IDs exist, create the first one editable
+                     detailTable1Body.appendChild(createDetailTable1Row(allParsedIds[0], true));
+                     startIndexForAppend = 1;
+                }
+                
+                // Append remaining IDs
+                for (let i = startIndexForAppend; i < allParsedIds.length; i++) {
+                    detailTable1Body.appendChild(createDetailTable1Row(allParsedIds[i], true));
+                }
+            }
+            autoIdentifyDialog.classList.add('hidden');
+            updateShipmentIdCount();
+        });
+    }
+
+    // Add event listener for delete buttons in Detail Table 1 using delegation
+    if (detailTable1Body) {
+        detailTable1Body.addEventListener('click', function(event) {
+            if (event.target.classList.contains('delete-shipment-id-btn')) {
+                console.log("Delete shipment ID button clicked. Event target:", event.target); // Debug log
+                const rowToDelete = event.target.closest('tr');
+
+                // Check if it's the last remaining row
+                const currentRows = detailTable1Body.querySelectorAll('tr');
+                if (currentRows.length <= 1) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '无法删除',
+                        text: '至少需要保留一个货件 ID。',
+                        confirmButtonText: '确定'
+                    });
+                    console.log("Cannot delete: Last remaining shipment ID row.");
+                    return;
+                }
+
+                if (rowToDelete) {
+                    console.log("Row to delete found:", rowToDelete); // Debug log
+                    rowToDelete.remove();
+                    updateShipmentIdCount();
+                    console.log("Shipment ID row deleted."); // Debug log
+                } else {
+                    console.log("Could not find row to delete."); // Debug log
+                }
+            }
+        });
+    }
+
+    /**
+     * Filters the `allTableData` based on `currentFilters` and renders the table.
+     * @returns {void}
+     */
+    function applyFiltersAndRenderTable() {
+        let filteredData = allTableData;
+
+        // Filter by date range
+        if (currentFilters.dateRange > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            filteredData = filteredData.filter(row => {
+                if (!row.cn_send_date) return false; // Skip if no date
+                const rowDate = new Date(row.cn_send_date);
+                rowDate.setHours(0, 0, 0, 0);
+                const diffTime = Math.abs(today.getTime() - rowDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= currentFilters.dateRange;
+            });
+        }
+
+        // Filter by main tracking ID
+        if (currentFilters.mainTrackingId) {
+            const searchTerm = currentFilters.mainTrackingId.toLowerCase();
+            filteredData = filteredData.filter(row => {
+                return row.main_tracking_id && row.main_tracking_id.toLowerCase().includes(searchTerm);
+            });
+        }
+
+        // Filter by transport status
+        if (currentFilters.transportStatus) {
+            filteredData = filteredData.filter(row => {
+                return row.status === currentFilters.transportStatus;
+            });
+        }
+
+        const tbody = document.querySelector('table tbody');
+        tbody.innerHTML = ''; // Clear current table
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
+        } else {
+            filteredData.forEach(row => tbody.appendChild(createRow(row)));
+        }
+        // Update pagination controls with the count of filtered data (if you had full client-side pagination)
+        // For now, we'll just update the current page display based on filtered data length.
+        updatePaginationControls(filteredData.length);
+    }
+
+    // Event Listeners for new filter controls
+    document.querySelectorAll('.query-date-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const days = parseInt(this.dataset.days);
+            currentFilters.dateRange = days;
+            applyFiltersAndRenderTable();
+        });
+    });
+
+    const mainTrackingIdFilter = document.getElementById('mainTrackingIdFilter');
+    if (mainTrackingIdFilter) {
+        mainTrackingIdFilter.addEventListener('input', function() {
+            currentFilters.mainTrackingId = this.value;
+            applyFiltersAndRenderTable();
+        });
+    }
+
+    const transportStatusFilter = document.getElementById('transportStatusFilter');
+    if (transportStatusFilter) {
+        transportStatusFilter.addEventListener('change', function() {
+            currentFilters.transportStatus = this.value;
+            applyFiltersAndRenderTable();
+        });
+    }
+
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            currentFilters.dateRange = 0;
+            currentFilters.mainTrackingId = '';
+            currentFilters.transportStatus = '';
+            // Reset UI elements
+            if (mainTrackingIdFilter) mainTrackingIdFilter.value = '';
+            if (transportStatusFilter) transportStatusFilter.value = '';
+            applyFiltersAndRenderTable();
+        });
     }
 </script>
