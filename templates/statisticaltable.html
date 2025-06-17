@@ -604,26 +604,108 @@
 
     // Export to Excel Button Event Listener
     exportExcelBtn.addEventListener('click', () => {
-      const table = document.querySelector('#statisticalSummaryBody').closest('table');
-      const ws = XLSX.utils.table_to_sheet(table);
+      const table = document.querySelector('table'); // Get the table element
 
-      // 确保运单号列 (第二列，索引为1) 以文本形式导出
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      const trackingNumberColIndex = 1; // 运单号是第2列，0-indexed 是 1
+      // Create a new workbook and a new worksheet
+      const wb = XLSX.utils.book_new();
+      const ws_data = [];
 
-      for (let R = range.s.r + 1; R <= range.e.r; ++R) { // 从第二行开始遍历数据行 (跳过表头)
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: trackingNumberColIndex });
-          const cell = ws[cellAddress];
-          if (cell && cell.t !== 's') { // 如果单元格存在且不是字符串类型
-              cell.t = 's'; // 强制设置为字符串类型
-              cell.v = String(cell.v); // 确保值是字符串
-              if (cell.z) delete cell.z; // 移除可能的数字格式
+      // Get table headers
+      const headers = [];
+      table.querySelectorAll('thead th').forEach(th => {
+        // Exclude the resizer div and sort icons from the header text
+        let headerText = th.textContent.trim();
+        // Remove specific text if present, e.g., "日期" from "日期 排序图标"
+        headerText = headerText.replace('日期', '').replace(' ', ''); // Remove '日期' if it's separate
+        if (headerText === '') { // For the date column where only icons might be present
+            headerText = '日期';
+        }
+        if (th.querySelector('.tax-unit-price-input')) { // This is an approximate way to find the header for editable fields
+          headerText = '报税价';
+        } else if (th.querySelector('.operating-fee-input')) {
+          headerText = '操作费';
+        }
+        // Fallback for cases where textContent might be empty but there's an input
+        if (headerText === '' && th.children.length > 0) {
+            // Heuristic: check for specific input types within the header to identify it
+            if (th.querySelector('input[type="number"][class*="tax-unit-price-input"]')) {
+                headerText = '报税价';
+            } else if (th.querySelector('input[type="number"][class*="operating-fee-input"]')) {
+                headerText = '操作费';
+            }
+        }
+        // Clean up any remaining whitespace or unwanted characters
+        headerText = headerText.replace(/\n/g, '').trim();
+        // Remove sort icons text
+        headerText = headerText.replace(/按日期升序排序|按日期降序排序/g, '');
+
+        headers.push(headerText);
+      });
+      // Remove empty headers or headers that might be '保存当前行' for the context menu
+      const filteredHeaders = headers.filter(header => header !== '' && header !== '保存当前行' && header !== '返回功能列表');
+      ws_data.push(filteredHeaders);
+
+      // Get table data rows
+      table.querySelectorAll('tbody tr').forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach((cell, cellIndex) => {
+          // For editable input fields, get their value
+          const inputElement = cell.querySelector('input[type="number"]');
+          if (inputElement) {
+            rowData.push(parseFloat(inputElement.value) || 0); // Get value from input
+          } else {
+            // For '日期' column, format it to YYYY-MM-DD
+            if (cellIndex === 1) { // Assuming Date is the second column (index 1)
+              const dateValue = cell.textContent.trim();
+              try {
+                const dateObj = new Date(dateValue);
+                if (!isNaN(dateObj.getTime())) {
+                  rowData.push(dateObj.toISOString().split('T')[0]); // Format to YYYY-MM-DD
+                } else {
+                  rowData.push(dateValue); // Keep original if invalid date
+                }
+              } catch (e) {
+                rowData.push(dateValue); // Keep original on error
+              }
+            }
+            // For '运单号' column, ensure it's treated as text
+            else if (cellIndex === 2) { // Assuming Tracking Number is the third column (index 2)
+                rowData.push(cell.textContent.trim()); // Remove the prefix with \' to force text in Excel
+            }
+            else {
+              rowData.push(cell.textContent.trim());
+            }
           }
+        });
+        ws_data.push(rowData);
+      });
+
+      // Get footer data (totals)
+      const footerRow = table.querySelector('tfoot tr');
+      if (footerRow) {
+          const footerData = new Array(filteredHeaders.length).fill(''); // Initialize with empty strings for all columns
+
+          // "合计:" text goes into the first column, which corresponds to the colspan 4
+          footerData[0] = footerRow.querySelector('td:nth-child(1)').textContent.trim();
+
+          // Find and assign values to their correct column indices
+          footerData[4] = footerRow.querySelector('.total-settle-weight-sum').textContent.trim(); // 结算重量 - Col 5 (index 4)
+          footerData[7] = footerRow.querySelector('.subtotal-freight-sum').textContent.trim(); // 小计运费 - Col 8 (index 7)
+          footerData[8] = footerRow.querySelector('.pieces-sum').textContent.trim(); // 件数 - Col 9 (index 8)
+          footerData[10] = footerRow.querySelector('.subtotal-operating-fee-sum').textContent.trim(); // 小计操作费 - Col 11 (index 10)
+          footerData[11] = footerRow.querySelector('.total-overall-sum').textContent.trim(); // 合计 - Col 12 (index 11)
+
+          ws_data.push(footerData);
       }
 
-      const wb = XLSX.utils.book_new();
+      // Convert array of arrays to worksheet
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+      // Add the worksheet to the workbook
       XLSX.utils.book_append_sheet(wb, ws, "统计数据");
-      XLSX.writeFile(wb, "统计数据.xls", { bookType: 'xls' }); // 指定导出为 .xls 格式
+
+      // Write the workbook and trigger download
+      XLSX.writeFile(wb, "统计数据概览.xlsx");
     });
   </script>
 </body>
