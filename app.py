@@ -430,7 +430,7 @@ def admin_dashboard():
                     'role': profile_data['role'],
                     'registered_at': profile_data['created_at'], # Use created_at from profiles
                     'notes': profile_data.get('notes', 'N/A'),
-                    'permissions': profile_data.get('permissions', '[]') # Include permissions
+                    'permissions': json.dumps(profile_data.get('permissions', [])) # 确保权限是有效的JSON字符串
                 })
             # Handle users in auth.users but not in profiles (e.g., if profile creation failed)
             else:
@@ -441,7 +441,7 @@ def admin_dashboard():
                     'role': 'unknown', # Default role if no profile
                     'registered_at': auth_user.created_at, # Use created_at from auth.users
                     'notes': 'Profile missing',
-                    'permissions': '[]' # Default permissions for missing profiles
+                    'permissions': json.dumps([]) # Default permissions for missing profiles
                 })
 
         return render_template('admin.html', members=members, session=session)

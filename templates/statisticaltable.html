@@ -71,8 +71,15 @@
         <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
           <thead>
             <tr class="bg-gray-50 text-left">
-              <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider relative group">
-                日期
+              <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider">序号</th>
+              <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider relative group flex items-center justify-center">
+                <div class="flex items-center">
+                  日期
+                  <div class="flex flex-col ml-1">
+                    <i id="sortDateAsc" class="fa fa-sort-asc cursor-pointer text-gray-400 hover:text-gray-600" title="按日期升序排序"></i>
+                    <i id="sortDateDesc" class="fa fa-sort-desc cursor-pointer text-gray-400 hover:text-gray-600" title="按日期降序排序"></i>
+                  </div>
+                </div>
                 <div class="resizer absolute top-0 right-0 w-2 h-full cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
               </th>
               <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider relative group">
@@ -117,6 +124,19 @@
           <tbody id="statisticalSummaryBody" class="bg-white divide-y divide-gray-200">
             <!-- Data rows will be inserted here -->
           </tbody>
+          <tfoot class="bg-gray-50">
+            <tr class="font-bold text-gray-700">
+              <td colspan="4" class="px-4 py-2 text-right">合计:</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 total-settle-weight-sum">0.000</td>
+              <td class="px-4 py-2"></td> <!-- 货代价 -->
+              <td class="px-4 py-2"></td> <!-- 报税价 -->
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-freight-sum">0.00</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 pieces-sum">0</td>
+              <td class="px-4 py-2"></td> <!-- 操作费 -->
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-operating-fee-sum">0.00</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 total-overall-sum">0.00</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       <div id="statisticsDisplay" class="text-gray-700 mt-4">
@@ -148,6 +168,131 @@
       const saveAllBtn = document.getElementById('saveAllBtn'); // New: Get saveAllBtn
       const exportExcelBtn = document.getElementById('exportExcelBtn'); // New: Get exportExcelBtn
       const merchantsList = document.getElementById('merchantsList');
+      const statisticalSummaryBody = document.getElementById('statisticalSummaryBody'); // 获取 tbody 元素
+
+      // --- 合计计算和显示函数 START
+      const updateTotalsDisplay = () => {
+        let totalSettleWeightSum = 0;
+        let subtotalFreightSum = 0;
+        let piecesSum = 0;
+        let subtotalOperatingFeeSum = 0;
+        let totalOverallSum = 0;
+
+        const rows = document.querySelectorAll('#statisticalSummaryBody tr');
+        rows.forEach(row => {
+          totalSettleWeightSum += parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0; // 结算重量 (现在是第5列)
+          subtotalFreightSum += parseFloat(row.querySelector('.subtotal-freight').textContent) || 0; // 小计运费
+          piecesSum += parseInt(row.querySelector('td:nth-child(9)').textContent) || 0; // 件数 (现在是第9列)
+          subtotalOperatingFeeSum += parseFloat(row.querySelector('.subtotal-operating-fee').textContent) || 0; // 小计操作费
+          totalOverallSum += parseFloat(row.querySelector('.total-overall').textContent) || 0; // 合计
+        });
+
+        document.querySelector('.total-settle-weight-sum').textContent = totalSettleWeightSum.toFixed(3);
+        document.querySelector('.subtotal-freight-sum').textContent = subtotalFreightSum.toFixed(2);
+        document.querySelector('.pieces-sum').textContent = piecesSum;
+        document.querySelector('.subtotal-operating-fee-sum').textContent = subtotalOperatingFeeSum.toFixed(2);
+        document.querySelector('.total-overall-sum').textContent = totalOverallSum.toFixed(2);
+      };
+      // --- 合计计算和显示函数 END
+
+      // 渲染表格的函数，将数据绑定到HTML
+      const renderTable = (dataToRender) => {
+        statisticalSummaryBody.innerHTML = ''; // 清空之前的内容
+
+        if (dataToRender && dataToRender.length > 0) {
+          dataToRender.forEach((item, index) => {
+            const date = item.date || '';
+            const trackingNumber = item.tracking_number || '';
+            const totalSettleWeight = (parseFloat(item.total_settle_weight) || 0).toFixed(3);
+            const freightUnitPrice = (parseFloat(item.freight_unit_price) || 0).toFixed(2);
+            const merchantName = item.merchant_name || '';
+            const pieces = (parseInt(item.merchant_pieces) || 0);
+            const merchantSettleWeightDisplay = (parseFloat(item.merchant_weight) || 0).toFixed(3);
+            const taxUnitPrice = (parseFloat(item.merchant_tax_unit_price) || 0).toFixed(2);
+            const operatingFee = (parseFloat(item.merchant_operating_fee) || 0).toFixed(2);
+            const subtotalFreight = (parseFloat(item.subtotal_freight) || 0).toFixed(2);
+            const subtotalOperatingFee = (parseFloat(item.subtotal_operating_fee) || 0).toFixed(2);
+            const totalOverall = (parseFloat(item.total_overall) || 0).toFixed(2);
+
+            const row = document.createElement('tr');
+            row.classList.add('bg-white', 'divide-y', 'divide-gray-200');
+            row.dataset.itemId = item.id; // shipping_costs 的 ID
+            row.dataset.merchantName = merchantName; // 商家名称
+
+            row.innerHTML = `
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${date}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${trackingNumber}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantName}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantSettleWeightDisplay}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${freightUnitPrice}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                <input type="number" class="tax-unit-price-input px-1 py-0.5 border border-gray-300 rounded-md w-24 text-sm text-right focus:ring-blue-300 focus:border-blue-300" value="${taxUnitPrice}" step="0.01" data-original-value="${taxUnitPrice}">
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-freight">${subtotalFreight}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${pieces}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                <input type="number" class="operating-fee-input px-1 py-0.5 border border-gray-300 rounded-md w-24 text-sm text-right focus:ring-blue-300 focus:border-blue-300" value="${operatingFee}" step="0.01" data-original-value="${operatingFee}">
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-operating-fee">${subtotalOperatingFee}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 total-overall">${totalOverall}</td>
+            `;
+            statisticalSummaryBody.appendChild(row);
+
+            // 为新创建的 input 添加事件监听
+            const newTaxInput = row.querySelector('.tax-unit-price-input');
+            const newOperatingInput = row.querySelector('.operating-fee-input');
+
+            const updateCalculations = () => {
+              const currentTaxUnitPrice = parseFloat(newTaxInput.value) || 0;
+              const currentOperatingFee = parseFloat(newOperatingInput.value) || 0;
+
+              const currentMerchantSettleWeight = parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0; // 现在是第5列
+              const currentPieces = parseFloat(row.querySelector('td:nth-child(9)').textContent) || 0; // 现在是第9列
+
+              const newSubtotalFreight = (currentMerchantSettleWeight * currentTaxUnitPrice).toFixed(2);
+              const newSubtotalOperatingFee = (currentPieces * currentOperatingFee).toFixed(2);
+              const newTotalOverall = (parseFloat(newSubtotalFreight) + parseFloat(newSubtotalOperatingFee)).toFixed(2);
+
+              row.querySelector('.subtotal-freight').textContent = newSubtotalFreight;
+              row.querySelector('.subtotal-operating-fee').textContent = newSubtotalOperatingFee;
+              row.querySelector('.total-overall').textContent = newTotalOverall;
+
+              // 更新合计行
+              updateTotalsDisplay();
+            };
+
+            newTaxInput.addEventListener('input', updateCalculations);
+            newOperatingInput.addEventListener('input', updateCalculations);
+          });
+        } else {
+          statisticalSummaryBody.innerHTML = `<tr><td colspan="12" class="px-4 py-2 text-center text-gray-500">没有找到匹配的数据。</td></tr>`;
+        }
+        updateTotalsDisplay(); // Ensure totals are updated after initial render
+      };
+
+      // --- 排序功能 START
+      const sortDateAsc = document.getElementById('sortDateAsc');
+      const sortDateDesc = document.getElementById('sortDateDesc');
+
+      const sortDataByDate = (order) => {
+        if (!finalData || finalData.length === 0) return;
+
+        finalData.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          if (order === 'asc') {
+            return dateA.getTime() - dateB.getTime();
+          } else {
+            return dateB.getTime() - dateA.getTime();
+          }
+        });
+        renderTable(finalData); // 重新渲染表格
+      };
+
+      sortDateAsc.addEventListener('click', () => sortDataByDate('asc'));
+      sortDateDesc.addEventListener('click', () => sortDataByDate('desc'));
+      // --- 排序功能 END
 
       // 加载所有唯一的商家名称到 datalist
       async function loadMerchantsIntoDatalist() {
@@ -231,82 +376,22 @@
         console.log('Supabase Query Data:', finalData); // 打印查询到的数据
         console.log('Supabase Query Error:', finalError);
 
-        const statisticalSummaryBody = document.getElementById('statisticalSummaryBody');
-        statisticalSummaryBody.innerHTML = ''; // Clear previous content
-
         if (finalError) {
           console.error('查询统计数据失败:', finalError.message);
-          statisticalSummaryBody.innerHTML = `<tr><td colspan="13" class="px-4 py-2 text-center text-red-500">加载失败: ${finalError.message}</td></tr>`;
+          statisticalSummaryBody.innerHTML = `<tr><td colspan="12" class="px-4 py-2 text-center text-red-500">加载失败: ${finalError.message}</td></tr>`;
+          document.querySelector('.total-settle-weight-sum').textContent = '0.000';
+          document.querySelector('.subtotal-freight-sum').textContent = '0.00';
+          document.querySelector('.pieces-sum').textContent = '0';
+          document.querySelector('.subtotal-operating-fee-sum').textContent = '0.00';
+          document.querySelector('.total-overall-sum').textContent = '0.00';
           return;
         }
 
-        if (finalData && finalData.length > 0) {
-          finalData.forEach(item => {
-            const date = item.date || '';
-            const trackingNumber = item.tracking_number || '';
-            const totalSettleWeight = (parseFloat(item.total_settle_weight) || 0).toFixed(3);
-            const freightUnitPrice = (parseFloat(item.freight_unit_price) || 0).toFixed(2);
-            // 从新函数结果中获取商家级别的数据
-            const merchantName = item.merchant_name || '';
-            const pieces = (parseInt(item.merchant_pieces) || 0);
-            const merchantSettleWeightDisplay = (parseFloat(item.merchant_weight) || 0).toFixed(3); // 商家结算重量直接从RPC获取
-            const taxUnitPrice = (parseFloat(item.merchant_tax_unit_price) || 0).toFixed(2);
-            const operatingFee = (parseFloat(item.merchant_operating_fee) || 0).toFixed(2);
-            const subtotalFreight = (parseFloat(item.subtotal_freight) || 0).toFixed(2);
-            const subtotalOperatingFee = (parseFloat(item.subtotal_operating_fee) || 0).toFixed(2);
-            const totalOverall = (parseFloat(item.total_overall) || 0).toFixed(2);
-
-            const row = document.createElement('tr');
-            row.classList.add('bg-white', 'divide-y', 'divide-gray-200');
-            row.dataset.itemId = item.id; // shipping_costs 的 ID
-            row.dataset.merchantName = merchantName; // 商家名称
-
-            row.innerHTML = `
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${date}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${trackingNumber}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantName}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantSettleWeightDisplay}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${freightUnitPrice}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                <input type="number" class="tax-unit-price-input px-1 py-0.5 border border-gray-300 rounded-md w-24 text-sm text-right focus:ring-blue-300 focus:border-blue-300" value="${taxUnitPrice}" step="0.01" data-original-value="${taxUnitPrice}">
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-freight">${subtotalFreight}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${pieces}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                <input type="number" class="operating-fee-input px-1 py-0.5 border border-gray-300 rounded-md w-24 text-sm text-right focus:ring-blue-300 focus:border-blue-300" value="${operatingFee}" step="0.01" data-original-value="${operatingFee}">
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 subtotal-operating-fee">${subtotalOperatingFee}</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 total-overall">${totalOverall}</td>
-            `;
-            statisticalSummaryBody.appendChild(row);
-
-            // 为新创建的 input 添加事件监听
-            const newTaxInput = row.querySelector('.tax-unit-price-input');
-            const newOperatingInput = row.querySelector('.operating-fee-input');
-
-            const updateCalculations = () => {
-              const currentTaxUnitPrice = parseFloat(newTaxInput.value) || 0;
-              const currentOperatingFee = parseFloat(newOperatingInput.value) || 0;
-
-              const currentMerchantSettleWeight = parseFloat(row.querySelector('td:nth-child(4)').textContent) || 0; // 第4列是商家结算重量
-              const currentPieces = parseFloat(row.querySelector('td:nth-child(8)').textContent) || 0; // 第8列是件数
-
-              const newSubtotalFreight = (currentMerchantSettleWeight * currentTaxUnitPrice).toFixed(2);
-              const newSubtotalOperatingFee = (currentPieces * currentOperatingFee).toFixed(2);
-              const newTotalOverall = (parseFloat(newSubtotalFreight) + parseFloat(newSubtotalOperatingFee)).toFixed(2);
-
-              row.querySelector('.subtotal-freight').textContent = newSubtotalFreight;
-              row.querySelector('.subtotal-operating-fee').textContent = newSubtotalOperatingFee;
-              row.querySelector('.total-overall').textContent = newTotalOverall;
-            };
-
-            newTaxInput.addEventListener('input', updateCalculations);
-            newOperatingInput.addEventListener('input', updateCalculations);
-          });
-        } else {
-          statisticalSummaryBody.innerHTML = `<tr><td colspan="11" class="px-4 py-2 text-center text-gray-500">没有找到匹配的数据。</td></tr>`;
-        }
+        renderTable(finalData); // 调用渲染函数
       });
+
+      // 初始查询和渲染
+      queryBtn.click(); // 在页面加载时自动执行一次查询
     });
 
     // --- 右键菜单和保存功能 --- START
@@ -328,6 +413,7 @@
     });
 
     // 监听表格 tbody 的右键点击事件
+    const statisticalSummaryBody = document.getElementById('statisticalSummaryBody'); // Get it here
     statisticalSummaryBody.addEventListener('contextmenu', (e) => {
       console.log('Right-click event detected on statisticalSummaryBody.', e.target); // Debugging line
       console.log('finalData at contextmenu:', finalData); // Added debug log
