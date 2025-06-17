@@ -6,6 +6,7 @@
   <title>用户功能界面</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     /* 可以添加一些自定义样式，如果 Tailwind 无法满足所有需求 */
   </style>
@@ -36,9 +37,9 @@
         </div>
         <!-- 登出按钮 -->
         <div class="mt-8">
-          <a href="{{ url_for('user_logout') }}" class="block w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-center transition-all duration-300">
+          <button id="logoutBtn" class="block w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-center transition-all duration-300">
             <i class="fa fa-sign-out mr-2"></i> 登出
-          </a>
+          </button>
         </div>
       </div>
     </aside>
@@ -81,4 +82,55 @@
   </div>
 
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        /**
+         * 显示 SweetAlert2 提示消息。
+         * @param {string} icon - 图标类型 (success, error, warning, info, question)。
+         * @param {string} title - 提示标题。
+         * @param {string} text - 提示内容。
+         * @param {number} timer - 自动关闭的毫秒数 (可选)。
+         * @returns {Promise<SweetAlertResult>} SweetAlert2 结果对象。
+         */
+        const showAlert = (icon, title, text, timer = 0) => {
+            return Swal.fire({
+                icon: icon,
+                title: title,
+                text: text,
+                timer: timer,
+                showConfirmButton: !timer,
+                customClass: {
+                    popup: 'rounded-xl shadow-lg'
+                }
+            });
+        };
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        console.error('Logout error from backend:', data.message || '未知错误');
+                        showAlert('error', '登出失败', data.message || '登出失败，请重试。');
+                    }
+                } catch (e) {
+                    console.error('Logout request failed:', e);
+                    showAlert('error', '网络错误', '无法连接到服务器，请检查网络连接。');
+                }
+            });
+        }
+    });
+</script>
 </html> 

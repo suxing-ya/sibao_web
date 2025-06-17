@@ -356,6 +356,7 @@ def pt_function_interface():
             {"name": "运费分摊核算", "description": "计算每项货物的分摊费用，并支持数据保存、查询和导出。", "url_route": "expense_allocation_function", "required_permission": "expense_allocation_function"},
             {"name": "成本核算", "description": "进行各项成本的精确计算和分析。", "url_route": "y2cost_html", "required_permission": "y2cost_html"},
             {"name": "条形码生成", "description": "快速生成并打印各类商品条形码，支持自定义内容和格式。", "url_route": "barcode_generator_html", "required_permission": "barcode_generator_html"},
+            {"name": "统计功能", "description": "查看各项业务数据的统计概览。", "url_route": "statistical_table_html", "required_permission": "statistical_table_html"},
             # 以下是原有的通用功能，如果需要保留，请保留；如果需要移除，可以删除。
             # {"name": "专属优惠", "description": "浏览仅为您提供的个性化优惠和折扣。"},
             # {"name": "账户设置", "description": "管理您的个人资料、密码和偏好设置。"},
@@ -516,6 +517,62 @@ def delete_member(member_id):
             except (json.JSONDecodeError, TypeError):
                 pass # Ignore if json is not valid
         return jsonify({"message": f"服务器错误：无法删除会员。详情：{error_message}"}), 500
+
+@app.route('/statisticaltable.html')
+@login_required
+@permission_required('statistical_table_html')
+def statistical_table_html():
+    return render_template('statisticaltable.html')
+
+@app.route('/api/shipping_costs/update', methods=['PUT'])
+@login_required
+@permission_required('statistical_table_html') # 假设统计功能页面的用户有权限修改数据
+def update_shipping_cost():
+    data = request.get_json()
+    item_id = data.get('id')
+    merchant_name_to_update = data.get('merchant_name')
+    new_tax_unit_price = data.get('tax_unit_price')
+    new_operating_fee = data.get('operating_fee')
+    new_total_overall = data.get('total_overall') # This is the merchant-specific total overall
+
+    if not all([item_id, merchant_name_to_update, new_tax_unit_price is not None, new_operating_fee is not None, new_total_overall is not None]):
+        return jsonify({"message": "缺少必要的更新参数 (ID, 商家名称, 报税价, 操作费, 合计)"}), 400
+
+    try:
+        # 1. Fetch the existing record
+        response = supabase.from_('shipping_costs').select('merchants').eq('id', item_id).single().execute()
+        
+        if response.data:
+            existing_merchants = response.data.get('merchants', [])
+            updated_merchants = []
+            merchant_found = False
+
+            for merchant_obj in existing_merchants:
+                if merchant_obj.get('name') == merchant_name_to_update:
+                    # Found the merchant, update its fields
+                    merchant_obj['tax_unit_price'] = new_tax_unit_price
+                    merchant_obj['operating_fee'] = new_operating_fee
+                    merchant_obj['total_overall'] = new_total_overall # Update merchant-specific total_overall
+                    merchant_found = True
+                updated_merchants.append(merchant_obj)
+
+            if not merchant_found:
+                return jsonify({"message": f"未找到匹配的商家: {merchant_name_to_update}"}), 404
+
+            # 2. Update the 'merchants' JSONB array in the database
+            update_response = supabase.from_('shipping_costs').update({'merchants': updated_merchants}).eq('id', item_id).execute()
+
+            # 即使 update_response.count 为 0，只要没有发生错误，也认为是成功，因为目标状态已达到
+            if update_response.count is not None and update_response.count > 0:
+                return jsonify({"message": "记录更新成功！"}), 200
+            else:
+                return jsonify({"message": "记录未发生变化，无需更新。"}), 200 # 更改为 200 OK 状态码
+        else:
+            return jsonify({"message": "更新失败，未找到记录"}), 404
+
+    except Exception as e:
+        print(f"Error updating shipping cost for merchant: {e}")
+        return jsonify({"message": f"服务器内部错误: {str(e)}"}), 500
 
 # Removed SQLite initialization
 if __name__ == '__main__':
