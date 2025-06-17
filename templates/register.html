@@ -48,43 +48,51 @@
 
     <form id="registrationForm" class="space-y-6" novalidate>
         <!-- Username -->
-        <div class="form-input-group">
-            <label for="username" class="sr-only">用户名</label>
-            <i class="fa fa-user"></i>
+        <div class="relative w-full">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa fa-user"></i>
+            </span>
             <input type="text" id="username" name="username" placeholder="用户名" required
-                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
 
         <!-- Email -->
-        <div class="form-input-group">
-            <label for="email" class="sr-only">电子邮箱</label>
-            <i class="fa fa-envelope"></i>
+        <div class="relative w-full">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa fa-envelope"></i>
+            </span>
             <input type="email" id="email" name="email" placeholder="电子邮箱" required
-                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
 
         <!-- Password -->
-        <div class="form-input-group">
-            <label for="password" class="sr-only">密码</label>
-            <i class="fa fa-lock"></i>
+        <div class="relative w-full">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa fa-lock"></i>
+            </span>
             <input type="password" id="password" name="password" placeholder="密码" required
-                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <i class="fa fa-eye toggle-password-visibility" id="togglePasswordVisibility"></i>
-            <div class="w-full bg-gray-200 rounded-full mt-2">
+                   class="w-full pl-14 pr-14 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400" id="togglePasswordVisibility">
+                <i class="fa fa-eye-slash"></i>
+            </span>
+            <div class="w-full bg-white rounded-full mt-2">
                 <div id="password-strength" class="password-strength-bar rounded-full"></div>
             </div>
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
 
         <!-- Confirm Password -->
-        <div class="form-input-group">
-            <label for="confirm-password" class="sr-only">确认密码</label>
-            <i class="fa fa-lock"></i>
+        <div class="relative w-full">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa fa-lock"></i>
+            </span>
             <input type="password" id="confirm-password" name="confirm-password" placeholder="确认密码" required
-                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <i class="fa fa-eye toggle-password-visibility" id="toggleConfirmPasswordVisibility"></i>
+                   class="w-full pl-14 pr-14 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400" id="toggleConfirmPasswordVisibility">
+                <i class="fa fa-eye-slash"></i>
+            </span>
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
         
@@ -134,8 +142,7 @@
             togglePasswordVisibility.addEventListener('click', function () {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
-                this.classList.toggle('fa-eye');
-                this.classList.toggle('fa-eye-slash');
+                this.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
             });
         }
 
@@ -143,8 +150,7 @@
             toggleConfirmPasswordVisibility.addEventListener('click', function () {
                 const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 confirmPasswordInput.setAttribute('type', type);
-                this.classList.toggle('fa-eye');
-                this.classList.toggle('fa-eye-slash');
+                this.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
             });
         }
 
@@ -199,6 +205,16 @@
 
         const checkPasswordStrength = (password) => {
             const value = password.value;
+            const strengthBar = document.getElementById('password-strength');
+
+            // 如果密码为空，强度条显示为白色背景，宽度为0
+            if (value.length === 0) {
+                strengthBar.style.width = '0%';
+                strengthBar.className = 'password-strength-bar rounded-full bg-white';
+                showSuccess(password); // 清除可能存在的错误信息
+                return true;
+            }
+
             let score = 0;
             if (value.length >= 8) score++;
             if (/[A-Z]/.test(value)) score++;
@@ -209,13 +225,22 @@
             const width = (score / 5) * 100;
             strengthBar.style.width = `${width}%`;
 
-            const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
-            strengthBar.className = `password-strength-bar rounded-full ${colors[score - 1] || 'bg-gray-200'}`;
+            // 根据分数设置颜色
+            let barColorClass = 'bg-gray-200'; // 默认值，理论上不会用到
+            if (score === 0) barColorClass = 'bg-red-500'; // 即使有输入但强度为0
+            else if (score === 1) barColorClass = 'bg-red-500';
+            else if (score === 2) barColorClass = 'bg-orange-500';
+            else if (score === 3) barColorClass = 'bg-yellow-500';
+            else if (score === 4) barColorClass = 'bg-lime-500';
+            else if (score === 5) barColorClass = 'bg-green-500';
+
+            strengthBar.className = `password-strength-bar rounded-full ${barColorClass}`;
             
             if (value.length > 0 && value.length < 8) {
                 showError(password, '密码长度至少为8位');
                 return false;
             }
+            showSuccess(password);
             return true;
         };
 

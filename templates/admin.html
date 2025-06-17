@@ -214,16 +214,27 @@
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
                 try {
-                    const { error } = await supabase.auth.signOut();
-                    if (error) {
-                        console.error('Logout error:', error.message);
-                        showAlert('error', '登出失败', error.message);
+                    // 发送请求到后端登出路由
+                    const response = await fetch('/logout', {
+                        method: 'POST', // 使用 POST 方法更安全
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.redirect_url) {
+                        // 如果后端返回重定向URL，则跳转
+                        window.location.href = data.redirect_url;
                     } else {
-                        window.location.href = '/'; // Redirect to home/login page
+                        // 如果后端返回错误或没有重定向URL
+                        console.error('Logout error from backend:', data.message || '未知错误');
+                        showAlert('error', '登出失败', data.message || '登出失败，请重试。');
                     }
                 } catch (e) {
-                    console.error('Logout exception:', e);
-                    showAlert('error', '网络错误', '登出时发生错误。');
+                    console.error('Logout request failed:', e);
+                    showAlert('error', '网络错误', '无法连接到服务器，请检查网络连接。');
                 }
             });
         }

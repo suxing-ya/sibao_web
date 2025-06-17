@@ -44,19 +44,23 @@
       {% endif %}
       <form action="{{ url_for('admin_login') }}" method="POST" class="space-y-4">
         <!-- Username -->
-        <div class="form-input-group">
-          <label for="username" class="sr-only">用户名</label>
-          <i class="fa fa-user"></i>
+        <div class="relative w-full">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <i class="fa fa-user"></i>
+          </span>
           <input type="text" id="username" name="username" placeholder="用户名" required
-                 class="form-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                 class="form-input w-full pl-14 pr-4 px-4 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <!-- Password -->
-        <div class="form-input-group">
-          <label for="password" class="sr-only">密码</label>
-          <i class="fa fa-lock"></i>
+        <div class="relative w-full">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <i class="fa fa-lock"></i>
+          </span>
           <input type="password" id="password" name="password" placeholder="密码" required
-                 class="form-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <i class="fa fa-eye toggle-password-visibility" id="togglePasswordVisibility"></i>
+                 class="form-input w-full pl-14 pr-14 px-4 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <span class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400" id="togglePasswordVisibility">
+            <i class="fa fa-eye-slash"></i>
+          </span>
         </div>
         <button type="submit"
                 class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300">
@@ -75,8 +79,7 @@
       togglePasswordVisibility.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
-        this.classList.toggle('fa-eye');
-        this.classList.toggle('fa-eye-slash');
+        this.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
       });
     }
   });

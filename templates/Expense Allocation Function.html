@@ -153,22 +153,22 @@
         <table class="w-full">
           <thead>
             <tr class="bg-gray-50 text-left">
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">序号</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">商户</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">件数</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">货物实重 (kg)</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">比例</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">占纸箱 (kg)</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">占抛出 (kg)</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">结算重量 (kg)</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">合计金额 (元)</th>
-              <th class="px-2 py-3 sm:px-6 sm:py-4 font-semibold text-gray-600">操作</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">序号</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs" style="min-width: 160px;">商户</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">件数</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">货物实重 (kg)</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">比例</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">占纸箱 (kg)</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">占抛出 (kg)</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">结算重量 (kg)</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs" style="min-width: 110px;">合计金额 (元)</th>
+              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">操作</th>
             </tr>
           </thead>
           <tbody id="detailTable">
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">1</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
+              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
                 <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
@@ -185,7 +185,7 @@
                 <input type="number" value="1.345" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">4.969</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">337.88</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">337.88</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
                   <i class="fa fa-trash"></i>
@@ -194,7 +194,7 @@
             </tr>
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">2</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
+              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
                 <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
@@ -211,7 +211,7 @@
                 <input type="number" value="0.208" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0.767</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">52.15</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">52.15</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
                   <i class="fa fa-trash"></i>
@@ -220,7 +220,7 @@
             </tr>
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">3</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
+              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
                 <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
@@ -237,7 +237,7 @@
                 <input type="number" value="0.463" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">1.710</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">116.25</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">116.25</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
                   <i class="fa fa-trash"></i>
@@ -246,7 +246,7 @@
             </tr>
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">4</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
+              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
                 <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
@@ -263,7 +263,7 @@
                 <input type="number" value="1.540" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">5.688</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">386.77</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">386.77</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
                   <i class="fa fa-trash"></i>
@@ -278,7 +278,7 @@
               <td class="px-2 py-3 sm:px-6 sm:py-4 total-box-weight">1.357</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 total-throw">3.556</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4 total-settle-weight font-bold">13.133</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-amount font-bold">893.04</td>
+              <td class="px-2 py-3 sm:px-6 sm:py-4 total-amount font-bold" style="min-width: 110px;">893.04</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
             </tr>
           </tbody>
@@ -444,7 +444,7 @@
       newRow.className = 'border-b hover:bg-gray-50 transition-colors';
       newRow.innerHTML = `
         <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
+        <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
           <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
         </td>
         <td class="px-2 py-3 sm:px-6 sm:py-4">
@@ -461,7 +461,7 @@
           <input type="number" value="0" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
         </td>
         <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0</td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium">0</td>
+        <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">0</td>
         <td class="px-2 py-3 sm:px-6 sm:py-4">
           <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
             <i class="fa fa-trash"></i>
@@ -597,20 +597,20 @@
                     if (data.merchants && data.merchants.length > 0) {
                         data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
                     } else {
-                        addNewRow('新商户', '0', '1', false); // 即使有数据，如果merchants为空，也添加一行
+                        addNewRow('', '0', '1', false); // 即使有数据，如果merchants为空，也添加一行
                     }
                 } else {
                     // 找不到对应 order_number 的数据，则生成新的表单编号
                     Swal.fire('提示', `未找到表单编号为 ${orderNumberFromUrl} 的数据，将为您生成新的表单编号。`, 'info');
                     await generateNewOrderNumber(); // 生成新编号
-                    addNewRow('新商户', '0', '1', false);
+                    addNewRow('', '0', '1', false);
                 }
             } catch (e) {
                 console.error('加载数据时发生异常:', e.message);
                 Swal.fire('错误', '加载数据时发生异常: ' + e.message, 'error');
                 // 如果加载失败，也尝试生成新的表单编号
                 await generateNewOrderNumber(); // 生成新编号
-                addNewRow('新商户', '0', '1', false);
+                addNewRow('', '0', '1', false);
             } finally {
                 calculateAll(); // 始终在加载或重置后重新计算
             }
@@ -618,7 +618,7 @@
             // 如果 URL 中没有 order_number，或者强制生成新编号，则重置为初始状态并生成新编号
             await generateNewOrderNumber(); // 生成新编号
             resetFormInputs(); // 重置除 orderNumber 以外的其他输入框
-            addNewRow('新商户', '0', '1', false);
+            addNewRow('', '0', '1', false);
             calculateAll();
         }
     }

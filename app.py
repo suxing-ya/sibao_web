@@ -152,7 +152,7 @@ def admin_logout():
     session.pop('logged_in', None)
     session.pop('username', None)
     session.pop('role', None)
-    return redirect(url_for('admin_login'))
+    return redirect(url_for('index'))
 
 def login_required(f):
     """
@@ -260,7 +260,7 @@ def post_login_callback():
         traceback.print_exc() # Print full traceback
         return jsonify({"message": f"设置会话失败: {e}"}), 500
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET', 'POST'])
 def user_logout():
     try:
         # Supabase client-side logout will clear JWT from local storage/cookies. Backend session is separate.
@@ -273,7 +273,7 @@ def user_logout():
     session.pop('user_id', None) # Clear user_id from session
     session.pop('username', None)
     session.pop('role', None)
-    return redirect(url_for('index')) # Redirect to homepage after logout
+    return jsonify({"redirect_url": url_for('index')}), 200 # Redirect to homepage after logout
 
 # Protected routes for different functionalities
 @app.route('/Expense Allocation Function.html')
