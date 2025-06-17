@@ -77,10 +77,15 @@
                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
           </div>
           <div class="flex items-center">
+            <label for="orderNumber" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">表单编号:</label>
+            <input type="text" id="orderNumber" 
+                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+          </div>
+          <div class="flex items-center">
             <label for="trackingNumber" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应快递单号:</label>
             <input type="text" id="trackingNumber" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
           </div>
-          <div class="flex items-center">
+           <div class="flex items-center">
             <label for="shipmentId" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应货件ID:</label>
             <input type="text" id="shipmentId" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
           </div>
@@ -300,6 +305,19 @@
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+      // 设置日期输入框的默认值和监听器
+      const dateInput = document.getElementById('dateInput');
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      dateInput.value = `${year}-${month}-${day}`;
+
+      // 监听日期变化，当日期改变时，重新生成表单编号
+      dateInput.addEventListener('change', function() {
+          loadDataFromUrlOrReset(true); // 传递 true 表示强制重置并生成新编号
+      });
+
       // 初始化图表
       initChart();
       
@@ -312,13 +330,12 @@
       document.getElementById('freightUnitPrice').addEventListener('change', calculateAll);
       document.getElementById('totalSettleWeight').addEventListener('change', calculateAll);
       document.getElementById('actualWeightWithBox').addEventListener('change', calculateAll);
-      document.getElementById('dateInput').addEventListener('change', loadData);
       
       // 为输入框绑定事件
       bindInputEvents();
       
-      // 初始化时加载当天数据
-      loadData();
+      // 初始化时加载数据（根据URL参数或重置表单）
+      loadDataFromUrlOrReset();
     });
     
     // 初始化图表
@@ -485,6 +502,7 @@
             actual_weight_with_box: parseFloat(document.getElementById('actualWeightWithBox').value) || 0,
             tracking_number: document.getElementById('trackingNumber').value,
             shipment_id: document.getElementById('shipmentId').value,
+            order_number: document.getElementById('orderNumber').value,
             merchants: []
         };
 
@@ -500,7 +518,7 @@
         try {
             const { data, error } = await supabase
                 .from('shipping_costs')
-                .upsert([dataToSave], { onConflict: 'date' }); // Upsert based on date
+                .upsert([dataToSave], { onConflict: 'order_number' }); // Upsert based on order_number
 
             if (error) {
                 console.error('保存数据到 Supabase 失败:', error.message);
@@ -521,55 +539,120 @@
     }
 
     /**
-     * 从 Supabase 数据库加载数据。
+     * 从 URL 获取 order_number 参数，并根据该参数加载数据，或重置表单。
      * @async
      * @returns {Promise<void>}
      */
-    async function loadData() {
-        const date = document.getElementById('dateInput').value;
-        if (!date) return;
-
+    async function loadDataFromUrlOrReset(forceNewOrderNumber = false) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderNumberFromUrl = urlParams.get('order_number');
+        
         const tbody = document.getElementById('detailTable');
         const rows = tbody.querySelectorAll('tr:not(.bg-gray-50)');
         rows.forEach(row => row.remove()); // Clear existing rows
 
-        try {
-            const { data, error } = await supabase
-                .from('shipping_costs')
-                .select('*')
-                .eq('date', date)
-                .single();
+        const dateInput = document.getElementById('dateInput');
+        const orderNumberInput = document.getElementById('orderNumber');
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-                console.error('从 Supabase 加载数据失败:', error.message);
-                Swal.fire('错误', '加载数据失败: ' + error.message, 'error');
-                resetFormInputs(); // Reset inputs if loading fails
-                return;
-            }
+        if (orderNumberFromUrl && !forceNewOrderNumber) {
+            // 如果 URL 中有 order_number 且不是强制生成新编号，则尝试从 Supabase 加载数据
+            try {
+                const { data, error } = await supabase
+                    .from('shipping_costs')
+                    .select('*')
+                    .eq('order_number', orderNumberFromUrl)
+                    .single();
 
-            if (data) {
-                document.getElementById('freightUnitPrice').value = data.freight_unit_price || '68';
-                document.getElementById('totalSettleWeight').value = data.total_settle_weight || '';
-                document.getElementById('actualWeightWithBox').value = data.actual_weight_with_box || '';
-                document.getElementById('trackingNumber').value = data.tracking_number || '';
-                document.getElementById('shipmentId').value = data.shipment_id || '';
+                if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+                    console.error('从 Supabase 加载数据失败:', error.message);
+                    Swal.fire('错误', '加载数据失败: ' + error.message, 'error');
+                    resetFormInputs(); // Reset inputs if loading fails
+                    return;
+                }
 
-                if (data.merchants && data.merchants.length > 0) {
-                    data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
+                if (data) {
+                    dateInput.value = data.date || '';
+                    document.getElementById('freightUnitPrice').value = data.freight_unit_price || '68';
+                    document.getElementById('totalSettleWeight').value = data.total_settle_weight || '';
+                    document.getElementById('actualWeightWithBox').value = data.actual_weight_with_box || '';
+                    document.getElementById('trackingNumber').value = data.tracking_number || '';
+                    document.getElementById('shipmentId').value = data.shipment_id || '';
+                    orderNumberInput.value = data.order_number || '';
+
+                    if (data.merchants && data.merchants.length > 0) {
+                        data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
+                    } else {
+                        addNewRow('新商户', '0', '1', false); // 即使有数据，如果merchants为空，也添加一行
+                    }
                 } else {
+                    // 找不到对应 order_number 的数据，则生成新的表单编号
+                    Swal.fire('提示', `未找到表单编号为 ${orderNumberFromUrl} 的数据，将为您生成新的表单编号。`, 'info');
+                    await generateNewOrderNumber(); // 生成新编号
                     addNewRow('新商户', '0', '1', false);
                 }
-            } else {
-                // No data found for the date, reset to initial state
-                resetFormInputs();
+            } catch (e) {
+                console.error('加载数据时发生异常:', e.message);
+                Swal.fire('错误', '加载数据时发生异常: ' + e.message, 'error');
+                // 如果加载失败，也尝试生成新的表单编号
+                await generateNewOrderNumber(); // 生成新编号
                 addNewRow('新商户', '0', '1', false);
+            } finally {
+                calculateAll(); // 始终在加载或重置后重新计算
             }
+        } else {
+            // 如果 URL 中没有 order_number，或者强制生成新编号，则重置为初始状态并生成新编号
+            await generateNewOrderNumber(); // 生成新编号
+            resetFormInputs(); // 重置除 orderNumber 以外的其他输入框
+            addNewRow('新商户', '0', '1', false);
+            calculateAll();
+        }
+    }
+
+    /**
+     * 生成新的表单编号并填充到输入框。
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function generateNewOrderNumber() {
+        const dateInput = document.getElementById('dateInput');
+        const orderNumberInput = document.getElementById('orderNumber');
+
+        const selectedDate = dateInput.value; // 获取当前日期输入框的值
+        if (!selectedDate) { // 如果日期为空，设置一个今天的默认值
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${year}-${month}-${day}`;
+            selectedDate = dateInput.value; // 更新selectedDate
+        }
+
+        const datePrefix = selectedDate.replace(/-/g, ''); // 格式化为 YYYYMMDD
+
+        try {
+            const { data: latestOrder, error } = await supabase
+                .from('shipping_costs')
+                .select('order_number')
+                .like('order_number', `${datePrefix}%`) // 查询以当前日期为前缀的订单号
+                .order('order_number', { ascending: false }) // 按订单号降序排列，获取最大的
+                .limit(1);
+
+            let nextSequence = 1;
+            if (latestOrder && latestOrder.length > 0 && latestOrder[0].order_number) {
+                const lastOrderNumber = latestOrder[0].order_number;
+                const lastSequenceStr = lastOrderNumber.slice(-3); // 获取最后三位序列号
+                const lastSequence = parseInt(lastSequenceStr, 10);
+                if (!isNaN(lastSequence)) {
+                    nextSequence = lastSequence + 1;
+                }
+            }
+
+            const newOrderNumber = `${datePrefix}${String(nextSequence).padStart(3, '0')}`;
+            orderNumberInput.value = newOrderNumber;
         } catch (e) {
-            console.error('加载数据时发生异常:', e.message);
-            Swal.fire('错误', '加载数据时发生异常: ' + e.message, 'error');
-            resetFormInputs(); // Reset inputs if loading fails
-        } finally {
-            calculateAll(); // Always recalculate after loading or resetting
+            console.error('生成表单编号失败:', e.message);
+            Swal.fire('错误', '自动生成表单编号失败: ' + e.message, 'error');
+            orderNumberInput.value = ''; // 失败时清空
         }
     }
 
@@ -582,6 +665,7 @@
         document.getElementById('actualWeightWithBox').value = '';
         document.getElementById('trackingNumber').value = '';
         document.getElementById('shipmentId').value = '';
+        // document.getElementById('orderNumber').value = ''; // 表单编号由 generateNewOrderNumber 管理
     }
 
     /**
@@ -621,6 +705,7 @@
           document.getElementById('shipmentId').value = '';
           document.getElementById('totalSettleWeight').value = '';
           document.getElementById('actualWeightWithBox').value = '';
+          document.getElementById('orderNumber').value = '';
           
           // 重新计算以更新所有字段为0或默认状态
           calculateAll();
@@ -774,11 +859,16 @@
 
       const trackingNumber = document.getElementById('trackingNumber').value;
       const shipmentId = document.getElementById('shipmentId').value;
+      const orderNumber = document.getElementById('orderNumber').value;
+
       if (trackingNumber) {
         ws_data.push([`快递单号: ${trackingNumber}`]);
       }
       if (shipmentId) {
         ws_data.push([`货件ID: ${shipmentId}`]);
+      }
+      if (orderNumber) {
+        ws_data.push([`表单编号: ${orderNumber}`]);
       }
       
       ws_data.push([]); // 空行用于间隔

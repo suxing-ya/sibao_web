@@ -345,7 +345,10 @@ def pt_function_interface():
         # 将会话中的 email 添加到 user_profile_data，以便模板使用
         user_profile_data['email'] = user_email
         # 确保permissions是列表形式，便于前端直接判断
-        user_profile_data['permissions'] = json.loads(user_profile_data.get('permissions', '[]'))
+        # 调试：打印原始的permissions值和类型
+        raw_permissions = user_profile_data.get('permissions')
+        print(f"DEBUG: Raw permissions for user {user_id}: {raw_permissions}, Type: {type(raw_permissions)}")
+        user_profile_data['permissions'] = json.loads(raw_permissions if raw_permissions else '[]')
 
         # 模拟用户可用的功能列表
         available_functions = [
