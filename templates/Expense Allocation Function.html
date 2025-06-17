@@ -169,7 +169,7 @@
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">1</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
@@ -195,7 +195,7 @@
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">2</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
@@ -221,7 +221,7 @@
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">3</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
@@ -247,7 +247,7 @@
             <tr class="border-b hover:bg-gray-50 transition-colors">
               <td class="px-2 py-3 sm:px-6 sm:py-4">4</td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
               </td>
               <td class="px-2 py-3 sm:px-6 sm:py-4">
                 <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
@@ -294,6 +294,9 @@
 
   <audio id="notificationSound" src="https://www.orangefreesounds.com/wp-content/uploads/2020/04/Alert-notification.mp3" preload="auto"></audio>
 
+  <!-- Datalist for merchants -->
+  <datalist id="merchantList"></datalist>
+
   <script>
     // 初始化图表
     let distributionChart;
@@ -336,6 +339,9 @@
       
       // 初始化时加载数据（根据URL参数或重置表单）
       loadDataFromUrlOrReset();
+
+      // 加载商户列表
+      populateMerchantDatalist();
     });
     
     // 初始化图表
@@ -419,10 +425,19 @@
           }
         });
       });
+
+      // 为商户输入框绑定change事件
+      document.querySelectorAll('.merchant-input').forEach(input => {
+        input.addEventListener('change', function() {
+          // 如果 value 是 "name (code)"，只保留 name
+          const match = this.value.match(/^(.+?) \([^)]+\)$/);
+          if (match) this.value = match[1];
+        });
+      });
     }
     
     // 添加新行
-    function addNewRow(name = '新商户', weight = '0', pieces = '1', shouldCalculate = true) {
+    function addNewRow(name = '', weight = '0', pieces = '1', shouldCalculate = true) {
       const tbody = document.getElementById('detailTable');
       
       const newRow = document.createElement('tr');
@@ -430,7 +445,7 @@
       newRow.innerHTML = `
         <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
         <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300">
+          <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
         </td>
         <td class="px-2 py-3 sm:px-6 sm:py-4">
           <input type="number" value="${pieces}" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
@@ -933,6 +948,40 @@
       
       // 导出Excel
       XLSX.writeFile(wb, filename);
+    }
+
+    /**
+     * 从 Supabase 获取商户列表并填充到 datalist 中。
+     * 体验与工作流页面一致：下拉显示"编号 - 名称"，选中后只填名称。
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function populateMerchantDatalist() {
+        const merchantListDatalist = document.getElementById('merchantList');
+        if (!merchantListDatalist) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('merchants')
+                .select('merchant_id_code, merchant_name')
+                .order('merchant_id_code', { ascending: true });
+
+            if (error) {
+                console.error('获取商户列表失败:', error.message);
+                return;
+            }
+
+            merchantListDatalist.innerHTML = '';
+
+            data.forEach(merchant => {
+                const option = document.createElement('option');
+                option.value = merchant.merchant_name; // 选中后只填名称
+                option.textContent = `${merchant.merchant_id_code} - ${merchant.merchant_name}`; // 下拉显示编号-名称
+                merchantListDatalist.appendChild(option);
+            });
+        } catch (e) {
+            console.error('填充商户列表时发生异常:', e.message);
+        }
     }
   </script>
 </body>
