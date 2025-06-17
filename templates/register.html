@@ -15,16 +15,26 @@
     .form-input-group .fa {
       position: absolute;
       top: 50%;
-      left: 1rem;
+      left: 1.25rem;
       transform: translateY(-50%);
       color: #9CA3AF; 
     }
     .form-input {
-      padding-left: 2.5rem;
+      padding-left: 3rem;
+      padding-right: 3rem;
     }
     .password-strength-bar {
         height: 4px;
         transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    }
+    .toggle-password-visibility {
+      position: absolute;
+      top: 50%;
+      right: 1.25rem;
+      transform: translateY(-50%);
+      color: #9CA3AF;
+      cursor: pointer;
+      z-index: 10;
     }
   </style>
 </head>
@@ -61,6 +71,7 @@
             <i class="fa fa-lock"></i>
             <input type="password" id="password" name="password" placeholder="密码" required
                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <i class="fa fa-eye toggle-password-visibility" id="togglePasswordVisibility"></i>
             <div class="w-full bg-gray-200 rounded-full mt-2">
                 <div id="password-strength" class="password-strength-bar rounded-full"></div>
             </div>
@@ -73,6 +84,7 @@
             <i class="fa fa-lock"></i>
             <input type="password" id="confirm-password" name="confirm-password" placeholder="确认密码" required
                    class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <i class="fa fa-eye toggle-password-visibility" id="toggleConfirmPasswordVisibility"></i>
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
         
@@ -109,8 +121,32 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('registrationForm');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
         const strengthBar = document.getElementById('password-strength');
+        const togglePasswordVisibility = document.getElementById('togglePasswordVisibility');
+        const toggleConfirmPasswordVisibility = document.getElementById('toggleConfirmPasswordVisibility');
+
+        // Password visibility toggles
+        if (togglePasswordVisibility) {
+            togglePasswordVisibility.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        if (toggleConfirmPasswordVisibility) {
+            toggleConfirmPasswordVisibility.addEventListener('click', function () {
+                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPasswordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
 
         const showError = (input, message) => {
             const formGroup = input.parentElement;
@@ -130,7 +166,7 @@
         };
 
         const checkEmail = (input) => {
-            const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             if (re.test(input.value.trim())) {
                 showSuccess(input);
                 return true;
@@ -213,57 +249,64 @@
                     const { data, error } = await supabase.auth.signUp({
                         email: email.value,
                         password: password.value,
-                        options: {
-                            data: {
-                                username: username.value
-                            }
-                        }
                     });
 
                     if (error) {
-                        console.error('Supabase signup error:', error); // 步骤5: 记录Supabase注册API的完整错误对象
+                        console.error('Supabase signup error:', error.message); // 步骤3: 打印Supabase错误信息
+                        let errorMessage = error.message;
+                        if (error.message.includes('users with that email address are already registered')) {
+                            errorMessage = '该电子邮箱已被注册，请尝试登录或使用其他邮箱。';
+                        }
+
                         Swal.fire({
                             icon: 'error',
                             title: '注册失败',
-                            text: error.message
+                            text: errorMessage
                         });
                     } else {
-                        // Sign up successful, now insert into profiles table
-                        const { user } = data;
-                        if (user) {
-                            const { error: profileError } = await supabase.from('profiles').insert({
-                                id: user.id, // Link to auth.users.id
-                                username: username.value
-                            });
-
-                            if (profileError) {
-                                console.error('插入用户档案失败:', profileError.message);
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: '注册成功，但档案创建失败',
-                                    text: `请联系管理员。错误: ${profileError.message}`
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: '注册成功!',
-                                    text: '请检查您的邮箱以完成验证。',
-                                    showConfirmButton: false,
-                                    timer: 3000
-                                }).then(() => {
-                                    // Optionally redirect after successful registration
-                                    window.location.href = "{{ url_for('index') }}"; // Redirect to home or login
-                                });
-                            }
-                        }
+                        console.log('Signup successful according to Supabase. Displaying success alert.', data); // 步骤4: 打印成功信息
+                        // Optionally, redirect after successful signup
+                        Swal.fire({
+                            icon: 'success',
+                            title: '注册成功!',
+                            text: '您已成功注册。请检查您的邮箱进行验证。' + (data.user ? ` 用户ID: ${data.user.id}` : ''),
+                            showConfirmButton: false,
+                            timer: 3000
+                        }).then(() => {
+                            // window.location.href = '{{ url_for('user_login') }}'; // Redirect to login page
+                        });
                     }
-                } catch (signUpError) {
+                } catch (e) {
+                    console.error('An unexpected error occurred during signup:', e.message); // 步骤5: 捕获其他异常
                     Swal.fire({
                         icon: 'error',
-                        title: '注册时发生错误',
-                        text: signUpError.message
+                        title: '注册异常',
+                        text: '发生未知错误，请重试或联系管理员。'
                     });
                 }
+            }
+        });
+
+        // Initial validation on page load if fields are pre-filled (e.g., from browser autofill)
+        if (usernameInput.value) checkRequired([usernameInput]);
+        if (emailInput.value) checkEmail(emailInput);
+
+        // Live validation on input
+        usernameInput.addEventListener('input', () => checkRequired([usernameInput]));
+        emailInput.addEventListener('input', () => checkEmail(emailInput));
+        passwordInput.addEventListener('input', () => {
+            checkPasswordStrength(passwordInput);
+            checkPasswordMatch(passwordInput, confirmPasswordInput);
+        });
+        confirmPasswordInput.addEventListener('input', () => checkPasswordMatch(passwordInput, confirmPasswordInput));
+
+        // Event listener for terms and conditions checkbox
+        document.getElementById('terms').addEventListener('change', function() {
+            const termsError = document.getElementById('terms-error');
+            if (this.checked) {
+                termsError.classList.add('hidden');
+            } else {
+                termsError.classList.remove('hidden');
             }
         });
     });

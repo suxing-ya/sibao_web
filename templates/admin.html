@@ -122,6 +122,7 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家编号</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家代号</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家名称</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -161,352 +162,160 @@
          * @param {number} timer - 自动关闭的毫秒数 (可选)。
          * @returns {Promise<SweetAlertResult>} SweetAlert2 结果对象。
          */
-        const showAlert = (icon, title, text, timer = null) => {
+        const showAlert = (icon, title, text, timer = 0) => {
             return Swal.fire({
                 icon: icon,
                 title: title,
                 text: text,
                 timer: timer,
-                showConfirmButton: timer ? false : true,
-                timerProgressBar: timer ? true : false,
+                showConfirmButton: !timer,
                 customClass: {
                     popup: 'rounded-xl shadow-lg'
                 }
             });
         };
 
+        // Tab Switching Logic
+        const tabs = document.querySelectorAll('.tab-item');
+        const contents = {
+          accountManagementTab: accountManagementContent,
+          roleListTab: roleListContent,
+          merchantManagementTab: merchantManagementContent
+        };
+
+        function switchTab(activeTabId) {
+          Object.keys(contents).forEach(tabId => {
+            const tab = document.getElementById(tabId);
+            const content = contents[tabId];
+
+            if (tabId === activeTabId) {
+              tab.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+              tab.classList.remove('border-transparent', 'text-gray-500');
+              content.classList.remove('hidden');
+              if (activeTabId === 'merchantManagementTab') {
+                loadMerchants(); // Load merchants when switching to this tab
+              }
+            } else {
+              tab.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+              tab.classList.add('border-transparent', 'text-gray-500');
+              content.classList.add('hidden');
+            }
+          });
+        }
+
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => switchTab(tab.id));
+        });
+
+        // Initialize active tab (e.g., account management)
+        switchTab('accountManagementTab');
+
+        // Logout Logic
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                window.location.href = "{{ url_for('admin_logout') }}";
-            });
-        }
-
-        // Tab switching logic
-        accountManagementTab.addEventListener('click', () => {
-            accountManagementTab.classList.add('active');
-            roleListTab.classList.remove('active');
-            merchantManagementTab.classList.remove('active');
-            accountManagementContent.classList.remove('hidden');
-            roleListContent.classList.add('hidden');
-            merchantManagementContent.classList.add('hidden');
-        });
-
-        roleListTab.addEventListener('click', () => {
-            roleListTab.classList.add('active');
-            accountManagementTab.classList.remove('active');
-            merchantManagementTab.classList.remove('active');
-            roleListContent.classList.remove('hidden');
-            accountManagementContent.classList.add('hidden');
-            merchantManagementContent.classList.add('hidden');
-        });
-
-        merchantManagementTab.addEventListener('click', () => {
-            merchantManagementTab.classList.add('active');
-            accountManagementTab.classList.remove('active');
-            roleListTab.classList.remove('active');
-            merchantManagementContent.classList.remove('hidden');
-            accountManagementContent.classList.add('hidden');
-            roleListContent.classList.add('hidden');
-            loadMerchants(); // Call function to load merchants when tab is clicked
-        });
-
-        const addSubAccountBtn = document.querySelector('.flex.justify-between.items-center.mb-4 button');
-        const newAccountDrawer = document.getElementById('newAccountDrawer');
-        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-        const cancelNewAccountBtn = document.getElementById('cancelNewAccountBtn');
-        const drawerOverlay = document.getElementById('drawerOverlay');
-
-        if (addSubAccountBtn) {
-            addSubAccountBtn.addEventListener('click', () => {
-                newAccountDrawer.classList.remove('translate-x-full', 'hidden');
-                newAccountDrawer.classList.add('translate-x-0');
-                drawerOverlay.classList.remove('hidden');
-            });
-        }
-
-        const hideDrawer = () => {
-            newAccountDrawer.classList.remove('translate-x-0');
-            newAccountDrawer.classList.add('translate-x-full');
-            drawerOverlay.classList.add('hidden');
-        };
-
-        if (closeDrawerBtn) {
-            closeDrawerBtn.addEventListener('click', hideDrawer);
-        }
-        if (cancelNewAccountBtn) {
-            cancelNewAccountBtn.addEventListener('click', hideDrawer);
-        }
-        if (drawerOverlay) {
-            drawerOverlay.addEventListener('click', hideDrawer);
-        }
-
-        const newSubAccountForm = document.getElementById('newSubAccountForm');
-        if (newSubAccountForm) {
-            newSubAccountForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const username = document.getElementById('newUsername').value;
-                const password = document.getElementById('newPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                const email = document.getElementById('newEmail').value;
-
-                if (!username || !password || !confirmPassword) {
-                    showAlert('warning', '输入有误', '账号名、密码和确认密码不能为空。');
-                    return;
-                }
-
-                if (password !== confirmPassword) {
-                    showAlert('warning', '密码不匹配', '两次输入的密码不一致，请重新输入。');
-                    return;
-                }
-
-                if (password.length < 6) {
-                    showAlert('warning', '密码过短', '密码长度不能少于6位。');
-                    return;
-                }
-
-                // Optional: Basic email validation
-                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showAlert('warning', '邮箱格式错误', '请输入有效的邮箱地址。');
-                    return;
-                }
-
+            logoutBtn.addEventListener('click', async () => {
                 try {
-                    const response = await fetch('/api/sub_accounts', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ username, password, email })
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        showAlert('success', '创建成功', result.message || '子账号已成功创建！', 1500);
-                        newSubAccountForm.reset(); // Clear form
-                        hideDrawer(); // Hide the drawer
-                        // Optionally, reload the members table to show the new account
-                        // For now, we assume the table is rendered on page load and can be refreshed by a page reload
-                        location.reload(); // Simple reload to reflect new data
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        console.error('Logout error:', error.message);
+                        showAlert('error', '登出失败', error.message);
                     } else {
-                        showAlert('error', '创建失败', result.message || '创建子账号失败。');
+                        window.location.href = '/'; // Redirect to home/login page
                     }
-                } catch (error) {
-                    console.error('创建子账号时发生错误:', error);
-                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                } catch (e) {
+                    console.error('Logout exception:', e);
+                    showAlert('error', '网络错误', '登出时发生错误。');
                 }
             });
         }
 
-        /**
-         * 为会员列表中的按钮和选择框附加事件处理程序。
-         */
-        const attachEventHandlers = () => {
-            if (!membersTableBody) return;
+        // Member Management Logic (Simplified as per existing HTML)
+        // This part would typically interact with your Flask backend for user management
+        // For now, it mostly handles display and basic client-side interactions
+        const editBtns = membersTableBody.querySelectorAll('.edit-btn');
+        const deleteBtns = membersTableBody.querySelectorAll('.delete-btn');
+        const managePermissionsBtns = membersTableBody.querySelectorAll('.manage-permissions-btn');
 
-            // Edit Notes for 'can' account
-            membersTableBody.querySelectorAll('.edit-notes-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const row = e.target.closest('tr');
-                    const memberId = row.dataset.id;
-                    const currentNotesCell = row.querySelector('.notes-cell');
-                    const currentNotes = currentNotesCell.dataset.notes;
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const memberId = e.target.dataset.id;
+                // Implement edit logic, e.g., open a modal with user data
+                showAlert('info', '编辑用户', `编辑用户ID: ${memberId} - 功能待实现`);
+            });
+        });
 
-                    const { value: newNotes } = await Swal.fire({
-                        title: '修改账号备注',
-                        input: 'text',
-                        inputLabel: '请输入新的备注',
-                        inputValue: currentNotes,
-                        showCancelButton: true,
-                        inputValidator: (value) => {
-                            if (!value) {
-                                return '备注不能为空！';
-                            }
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const memberId = e.target.dataset.id;
+                const result = await showAlert('question', '确认删除？', '此操作不可撤销！');
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/api/member/${memberId}`, {
+                            method: 'DELETE'
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            showAlert('success', '删除成功', data.message || '用户已删除！', 1500);
+                            e.target.closest('tr').remove(); // Remove row from UI
+                        } else {
+                            showAlert('error', '删除失败', data.message || '删除用户失败。');
                         }
-                    });
-
-                    if (newNotes !== undefined) {
-                        try {
-                            const response = await fetch(`/api/member/${memberId}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ notes: newNotes, role: 'admin' }) // role is also sent, though it won't change for admin
-                            });
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            const result = await response.json();
-                            showAlert('success', '更新成功', result.message || '账号备注已更新');
-                            currentNotesCell.textContent = newNotes; // Update UI
-                            currentNotesCell.dataset.notes = newNotes; // Update data attribute
-                        } catch (error) {
-                            console.error('更新备注失败:', error);
-                            showAlert('error', '更新失败', '无法更新账号备注。');
-                        }
+                    } catch (error) {
+                        console.error('删除用户时发生错误:', error);
+                        showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
                     }
-                });
+                }
+            });
+        });
+
+        managePermissionsBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const memberId = e.target.dataset.id;
+                const memberRow = e.target.closest('tr');
+                const permissionsData = memberRow.dataset.permissions ? JSON.parse(memberRow.dataset.permissions) : [];
+                const username = memberRow.querySelector('td:first-child').textContent;
+                showPermissionsDrawer(memberId, username, permissionsData);
+            });
+        });
+
+        // Permissions Drawer Logic
+        const permissionsDrawer = document.getElementById('permissionsDrawer');
+        const closePermissionsDrawerBtn = document.getElementById('closePermissionsDrawerBtn');
+        const permissionsDrawerOverlay = document.getElementById('permissionsDrawerOverlay');
+        const showPermissionsDrawer = (memberId, username, currentPermissions) => {
+            document.getElementById('permissionMemberName').textContent = username;
+            document.getElementById('currentMemberIdForPermissions').value = memberId;
+            
+            // Reset all checkboxes
+            for (const key in ALL_PERMISSIONS) {
+                if (ALL_PERMISSIONS.hasOwnProperty(key)) {
+                    ALL_PERMISSIONS[key].checked = false;
+                }
+            }
+            // Set checked based on currentPermissions
+            currentPermissions.forEach(perm => {
+                if (ALL_PERMISSIONS[perm]) {
+                    ALL_PERMISSIONS[perm].checked = true;
+                }
             });
 
-            // Change Password for 'can' account (Placeholder - backend not implemented yet)
-            membersTableBody.querySelectorAll('.change-password-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const row = e.target.closest('tr');
-                    const memberId = row.dataset.id;
-
-                    const { value: formValues } = await Swal.fire({
-                        title: '修改登录密码',
-                        html:
-                            '<input id="swal-input1" class="swal2-input" type="password" placeholder="新密码">' +
-                            '<input id="swal-input2" class="swal2-input" type="password" placeholder="确认新密码">',
-                        focusConfirm: false,
-                        preConfirm: () => {
-                            const newPassword = Swal.getPopup().querySelector('#swal-input1').value;
-                            const confirmPassword = Swal.getPopup().querySelector('#swal-input2').value;
-                            if (newPassword === confirmPassword && newPassword.length >= 6) {
-                                return { newPassword: newPassword };
-                            } else if (newPassword.length < 6) {
-                                Swal.showValidationMessage(`密码长度不能少于6位`);
-                                return false;
-                            } else {
-                                Swal.showValidationMessage(`两次输入的密码不一致`);
-                                return false;
-                            }
-                        }
-                    });
-
-                    if (formValues) {
-                        // Here you would send a request to your backend to update the password
-                        // For now, it's just a placeholder
-                        showAlert('info', '功能待开发', '修改登录密码功能正在开发中。');
-                        console.log(`Update password for member ID ${memberId} to ${formValues.newPassword}`);
-                    }
-                });
-            });
-
-            // Edit Info for sub-accounts (Placeholder - backend not implemented yet)
-            membersTableBody.querySelectorAll('.edit-info-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const row = e.target.closest('tr');
-                    const memberId = row.dataset.id;
-                    const username = row.querySelector('td:nth-child(1)').textContent;
-                    const notes = row.querySelector('.notes-cell').dataset.notes;
-
-                    const { value: formValues } = await Swal.fire({
-                        title: '编辑会员信息',
-                        html:
-                            `<label for="swal-input-username">账号名:</label><input id="swal-input-username" class="swal2-input" value="${username}">` +
-                            `<label for="swal-input-notes">账号备注:</label><input id="swal-input-notes" class="swal2-input" value="${notes}">`,
-                        focusConfirm: false,
-                        preConfirm: () => {
-                            const updatedUsername = Swal.getPopup().querySelector('#swal-input-username').value;
-                            const updatedNotes = Swal.getPopup().querySelector('#swal-input-notes').value;
-                            if (!updatedUsername || !updatedNotes) {
-                                Swal.showValidationMessage(`账号名和备注不能为空！`);
-                                return false;
-                            }
-                            return { username: updatedUsername, notes: updatedNotes };
-                        }
-                    });
-
-                    if (formValues) {
-                        // Here you would send a request to your backend to update member info
-                        showAlert('info', '功能待开发', '编辑会员信息功能正在开发中。');
-                        console.log(`Update member ID ${memberId} with username: ${formValues.username}, notes: ${formValues.notes}`);
-                    }
-                });
-            });
-
-            // Update Role for sub-accounts
-            membersTableBody.querySelectorAll('.update-role-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const row = e.target.closest('tr');
-                    const memberId = row.dataset.id;
-                    const username = row.querySelector('td:nth-child(1)').textContent; // Get username for confirmation
-
-                    const { value: newRole } = await Swal.fire({
-                        title: '修改账号权限',
-                        input: 'select',
-                        inputOptions: {
-                            'admin': '管理员',
-                            'member': '普通会员'
-                        },
-                        inputPlaceholder: '选择权限',
-                        showCancelButton: true,
-                        inputValidator: (value) => {
-                            return new Promise((resolve) => {
-                                if (value) {
-                                    resolve();
-                                } else {
-                                    resolve('请选择一个权限！');
-                                }
-                            });
-                        }
-                    });
-
-                    if (newRole) {
-                        const result = await showAlert('question', '确认更新？', `确定要将用户 ${username} 的权限更新为 ${newRole === 'admin' ? '管理员' : '普通会员'} 吗？`, null);
-                        if (result.isConfirmed) {
-                            try {
-                                const response = await fetch(`/api/member/${memberId}`, {
-                                    method: 'PUT',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({ role: newRole }) // Send only role for this action
-                                });
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                const result = await response.json();
-                                showAlert('success', '更新成功', result.message || '权限已更新');
-                                row.querySelector('td:nth-child(3)').textContent = newRole; // Update role in UI
-                        } catch (error) {
-                            console.error('更新权限失败:', error);
-                                showAlert('error', '更新失败', '无法更新会员权限。');
-                            }
-                        }
-                    }
-                });
-            });
-
-            // Delete member
-            membersTableBody.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const row = e.target.closest('tr');
-                    const memberId = row.dataset.id;
-                    const username = row.querySelector('td:nth-child(1)').textContent; // Get username for confirmation
-
-                    const result = await showAlert('question', '确认删除？', `确定要删除用户 ${username} 吗？此操作不可撤销！`, null);
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/api/member/${memberId}`, {
-                                method: 'DELETE'
-                            });
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            const result = await response.json();
-                            showAlert('success', '删除成功', result.message || '会员已删除', 1500);
-                            row.remove(); // Remove row from UI
-                        } catch (error) {
-                            console.error('删除会员失败:', error);
-                            showAlert('error', '删除失败', '无法删除会员。');
-                        }
-                    }
-                });
-            });
+            permissionsDrawer.classList.remove('translate-x-full', 'hidden');
+            permissionsDrawer.classList.add('translate-x-0');
+            permissionsDrawerOverlay.classList.remove('hidden');
         };
 
-        // Initial attachment of event handlers (for members loaded on page load)
-        attachEventHandlers();
+        const hidePermissionsDrawer = () => {
+            permissionsDrawer.classList.remove('translate-x-0');
+            permissionsDrawer.classList.add('translate-x-full');
+            permissionsDrawerOverlay.classList.add('hidden');
+        };
 
-        // Permissions Management Drawer Logic
-        const permissionsDrawer = document.getElementById('permissionsDrawer');
-        const permissionsDrawerOverlay = document.getElementById('permissionsDrawerOverlay');
-        const closePermissionsDrawerBtn = document.getElementById('closePermissionsDrawerBtn');
+        if (closePermissionsDrawerBtn) {
+            closePermissionsDrawerBtn.addEventListener('click', hidePermissionsDrawer);
+        }
+        if (permissionsDrawerOverlay) {
+            permissionsDrawerOverlay.addEventListener('click', hidePermissionsDrawer);
+        }
+
         const cancelPermissionsBtn = document.getElementById('cancelPermissionsBtn');
         const permissionsForm = document.getElementById('permissionsForm');
         const currentMemberIdForPermissions = document.getElementById('currentMemberIdForPermissions');
@@ -523,79 +332,6 @@
             'barcode_generator_html': permBarcodeGeneratorHtml
         };
 
-        const showPermissionsDrawer = (memberId, currentPermissions, username) => {
-            currentMemberIdForPermissions.value = memberId;
-            
-            // 重置所有复选框状态
-            for (const key in ALL_PERMISSIONS) {
-                if (ALL_PERMISSIONS.hasOwnProperty(key)) {
-                    ALL_PERMISSIONS[key].checked = false;
-                }
-            }
-
-            // 根据当前权限设置复选框状态
-            if (currentPermissions) {
-                for (const permission of currentPermissions) {
-                    if (ALL_PERMISSIONS[permission]) {
-                        ALL_PERMISSIONS[permission].checked = true;
-                    }
-                }
-            }
-
-            permissionsDrawer.classList.remove('translate-x-full', 'hidden');
-            permissionsDrawer.classList.add('translate-x-0');
-            permissionsDrawerOverlay.classList.remove('hidden');
-
-            // 更新权限用户名显示
-            const permissionUserName = document.getElementById('permissionUserName');
-            if (permissionUserName) {
-                permissionUserName.textContent = username;
-            }
-        };
-
-        const hidePermissionsDrawer = () => {
-            permissionsDrawer.classList.remove('translate-x-0');
-            permissionsDrawer.classList.add('translate-x-full');
-            permissionsDrawerOverlay.classList.add('hidden');
-        };
-
-        // 为"权限管理"按钮添加事件监听器
-        membersTableBody.addEventListener('click', (e) => {
-            if (e.target.classList.contains('manage-permissions-btn')) {
-                const memberId = e.target.dataset.id;
-                const row = e.target.closest('tr');
-                // 安全地解析 permissions 字符串
-                let currentPermissions = [];
-                try {
-                    const permissionsStr = row.dataset.permissions;
-                    currentPermissions = JSON.parse(permissionsStr || '[]');
-                } catch (error) {
-                    console.error('解析权限数据失败:', error);
-                    currentPermissions = [];
-                }
-                // 获取账号名
-                const username = row.querySelector('td:first-child').textContent;
-                showPermissionsDrawer(memberId, currentPermissions, username);
-            }
-        });
-
-        if (closeDrawerBtn) {
-            closeDrawerBtn.addEventListener('click', hideDrawer);
-        }
-        if (cancelPermissionsBtn) {
-            cancelPermissionsBtn.addEventListener('click', hidePermissionsDrawer);
-        }
-        if (permissionsDrawerOverlay) {
-            permissionsDrawerOverlay.addEventListener('click', hidePermissionsDrawer);
-        }
-
-        // 为"权限管理"抽屉的"X"按钮添加正确的事件监听器
-        const closePermissionsDrawerXBtn = document.getElementById('closePermissionsDrawerBtn');
-        if (closePermissionsDrawerXBtn) {
-            closePermissionsDrawerXBtn.addEventListener('click', hidePermissionsDrawer);
-        }
-
-        // 权限表单提交逻辑
         if (permissionsForm) {
             permissionsForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -647,6 +383,7 @@
         const merchantNameInput = document.getElementById('merchantName');
         const merchantDrawerTitle = document.getElementById('merchantDrawerTitle');
         const merchantSearchInput = document.getElementById('merchantSearchInput');
+        const merchantIdCodeInput = document.getElementById('merchantIdCode'); // 新增：商家编号输入框
 
         let allMerchants = []; // Store all fetched merchants for client-side filtering
 
@@ -655,6 +392,17 @@
             merchantIdToEdit.value = merchant.id || '';
             merchantCodeInput.value = merchant.merchant_code || '';
             merchantNameInput.value = merchant.merchant_name || '';
+            merchantIdCodeInput.value = merchant.merchant_id_code || ''; // 填充商家编号
+
+            // 如果是新增商家，自动生成商家编号
+            if (title === '新增商家') {
+                generateNewMerchantIdCode();
+            } else {
+                // 编辑时禁用商家编号输入框
+                merchantIdCodeInput.readOnly = true;
+                merchantIdCodeInput.classList.add('bg-gray-100');
+            }
+            
             newMerchantDrawer.classList.remove('translate-x-full', 'hidden');
             newMerchantDrawer.classList.add('translate-x-0');
             merchantDrawerOverlay.classList.remove('hidden');
@@ -665,6 +413,8 @@
             newMerchantDrawer.classList.add('translate-x-full');
             merchantDrawerOverlay.classList.add('hidden');
             newMerchantForm.reset(); // Clear form on close
+            merchantIdCodeInput.readOnly = false; // 恢复可编辑状态
+            merchantIdCodeInput.classList.remove('bg-gray-100');
         };
 
         if (addNewMerchantBtn) {
@@ -683,32 +433,42 @@
         newMerchantForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = merchantIdToEdit.value;
+            const merchant_id_code = merchantIdCodeInput.value.trim(); // 获取商家编号
             const merchant_code = merchantCodeInput.value.trim();
             const merchant_name = merchantNameInput.value.trim();
 
-            if (!merchant_code || !merchant_name) {
-                showAlert('warning', '输入有误', '商家代号和商家名称不能为空。');
+            if (!merchant_id_code || !merchant_code || !merchant_name) {
+                showAlert('warning', '输入有误', '商家编号、商家代号和商家名称不能为空。');
                 return;
             }
 
             try {
                 let response;
+                const dataToSave = { merchant_id_code, merchant_code, merchant_name }; // 包含商家编号
+
                 if (id) {
                     // Update existing merchant
                     response = await supabase
                         .from('merchants')
-                        .update({ merchant_code, merchant_name })
+                        .update(dataToSave)
                         .eq('id', id);
                 } else {
                     // Add new merchant
                     response = await supabase
                         .from('merchants')
-                        .insert([{ merchant_code, merchant_name }]);
+                        .insert([dataToSave]);
                 }
 
                 if (response.error) {
                     if (response.error.code === '23505') { // Unique violation error code for PostgreSQL
-                        showAlert('error', '保存失败', '商家代号已存在，请使用其他代号。');
+                        // 检查是哪个唯一约束被违反
+                        if (response.error.message.includes('merchant_id_code')) {
+                            showAlert('error', '保存失败', '商家编号已存在，请重新生成或使用其他编号。');
+                        } else if (response.error.message.includes('merchant_code')) {
+                            showAlert('error', '保存失败', '商家代号已存在，请使用其他代号。');
+                        } else {
+                            showAlert('error', '保存失败', response.error.message);
+                        }
                     } else {
                         showAlert('error', '保存失败', response.error.message);
                     }
@@ -717,7 +477,7 @@
                     hideMerchantDrawer();
                     loadMerchants(); // Reload merchant list
                 }
-            } catch (error) {
+            } catch (error) { // 捕获网络或其他异常
                 console.error('保存商家信息时发生错误:', error);
                 showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
             }
@@ -725,31 +485,32 @@
 
         // Load Merchants Data
         async function loadMerchants(searchTerm = '') {
-            let query = supabase.from('merchants').select('*').order('merchant_name', { ascending: true });
+            let query = supabase.from('merchants').select('*').order('merchant_id_code', { ascending: true }); // 按编号排序
 
             if (searchTerm) {
-                query = query.or(`merchant_code.ilike.%${searchTerm}%,merchant_name.ilike.%${searchTerm}%`);
+                query = query.or(`merchant_id_code.ilike.%${searchTerm}%,merchant_code.ilike.%${searchTerm}%,merchant_name.ilike.%${searchTerm}%`); // 搜索也包含商家编号
             }
 
             const { data, error } = await query;
             if (error) {
                 console.error('Error fetching merchants:', error.message);
-                merchantsTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
+                merchantsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`; // 调整colspan
                 return;
             }
-            allMerchants = data || []; // Store all merchants for search
+            allMerchants = data || []; // Store all fetched merchants for search
             renderMerchantsTable(allMerchants); // Render filtered or all data
         }
 
         function renderMerchantsTable(merchantsToRender) {
             merchantsTableBody.innerHTML = '';
             if (merchantsToRender.length === 0) {
-                merchantsTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-4">暂无商家数据</td></tr>`;
+                merchantsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">暂无商家数据</td></tr>`; // 调整colspan
                 return;
             }
             merchantsToRender.forEach(merchant => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${merchant.merchant_id_code || 'N/A'}</td>
                     <td class="px-6 py-4 whitespace-nowrap">${merchant.merchant_code}</td>
                     <td class="px-6 py-4 whitespace-nowrap">${merchant.merchant_name}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -802,6 +563,31 @@
                     }
                 });
             });
+        }
+
+        // 函数：生成新的商家编号
+        async function generateNewMerchantIdCode() {
+            try {
+                const { data: latestMerchant, error } = await supabase
+                    .from('merchants')
+                    .select('merchant_id_code')
+                    .order('merchant_id_code', { ascending: false })
+                    .limit(1);
+
+                let nextId = 1;
+                if (latestMerchant && latestMerchant.length > 0 && latestMerchant[0].merchant_id_code) {
+                    const lastIdCode = latestMerchant[0].merchant_id_code;
+                    const lastIdNum = parseInt(lastIdCode, 10);
+                    if (!isNaN(lastIdNum)) {
+                        nextId = lastIdNum + 1;
+                    }
+                }
+                merchantIdCodeInput.value = String(nextId).padStart(4, '0');
+            } catch (e) {
+                console.error('自动生成商家编号失败:', e.message);
+                showAlert('error', '自动生成商家编号失败', e.message);
+                merchantIdCodeInput.value = ''; // 失败时清空
+            }
         }
 
         // Merchant Search Input Event
@@ -931,6 +717,11 @@
 
       <form id="newMerchantForm" class="flex-grow space-y-4">
         <input type="hidden" id="merchantIdToEdit">
+        <div>
+            <label for="merchantIdCode" class="block text-sm font-medium text-gray-700">*商家编号</label>
+            <input type="text" id="merchantIdCode" name="merchant_id_code" required
+                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
         <div>
           <label for="merchantCode" class="block text-sm font-medium text-gray-700">*商家代号</label>
           <input type="text" id="merchantCode" name="merchant_code" required
