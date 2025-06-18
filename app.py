@@ -235,31 +235,45 @@ def post_login_callback():
         return jsonify({"message": "缺少 access token, 用户ID 或 邮箱"}), 400
 
     try:
-        # 使用 anon key 客户端来验证 token 并获取用户会话
-        # 或者更简单地，假设前端提供的 token 是有效的，并直接使用 user_id 来获取 profile
-        # 但为了安全，最好通过 Supabase SDK 在后端验证 token
-        # 这里我们假设可以通过 user_id 直接获取 profile 来设置 session
-
         # Fetch user's role and username from profiles table using the user_id
-        profile_query = supabase.from_('profiles').select('role, username, permissions').eq('id', user_id).single()
+        profile_query = supabase.from_('profiles').select('role, username, permissions').eq('id', user_id).limit(1)
         profile_res = profile_query.execute()
 
-        if profile_res.data:
-            session['logged_in'] = True
-            session['user_id'] = user_id
-            session['username'] = profile_res.data['username']
-            session['role'] = profile_res.data['role']
-            session['email'] = user_email # Store email in session
-            session['permissions'] = profile_res.data.get('permissions', '[]') # Store permissions in session
+        user_profile_data = None
+        if profile_res.data and len(profile_res.data) > 0:
+            user_profile_data = profile_res.data[0]
 
-            # Backend redirects to the desired page after setting session
-            return jsonify({"redirect_url": url_for('pt_function_interface')}), 200
-        else:
-            return jsonify({"message": "用户档案未找到或权限不足"}), 400 # Changed from render_template for POST request
+        if not user_profile_data:
+            # If profile does not exist, create a new one
+            print(f"DEBUG: No profile found for user_id {user_id}. Creating new profile.")
+            new_profile = {
+                'id': user_id,
+                'username': user_email.split('@')[0], # Default username from email
+                'role': 'normal', # Default role
+                'created_at': datetime.now().isoformat(),
+                'notes': '',
+                'permissions': '[]'
+            }
+            insert_res = supabase.from_('profiles').insert([new_profile]).execute()
+            # If execute() completes without error, it means the insert was successful.
+            # The outer try-except handles any API-level errors.
+            user_profile_data = insert_res.data[0] # Use the newly created profile data
+
+        # Continue with session setup using user_profile_data (whether fetched or newly created)
+        session['logged_in'] = True
+        session['user_id'] = user_id
+        session['username'] = user_profile_data['username'] # Use username from profile
+        session['role'] = user_profile_data['role']
+        session['email'] = user_email # Store email in session
+        session['permissions'] = user_profile_data.get('permissions', '[]') # Store permissions in session
+
+        # Backend redirects to the desired page after setting session
+        return jsonify({"redirect_url": url_for('pt_function_interface')}), 200
     except Exception as e:
         import traceback
-        traceback.print_exc() # Print full traceback
-        return jsonify({"message": f"设置会话失败: {e}"}), 500
+        traceback.print_exc()
+        print(f"Supabase post_login_callback error: {e}")
+        return jsonify({"message": f"登录失败: {e}"}), 500
 
 @app.route('/logout', methods=['GET', 'POST'])
 def user_logout():
@@ -407,22 +421,11 @@ def pt_function_interface():
         }
     ]
     
-    # Filter functions based on user's role and permissions
-    # Admin sees all functions. Non-admin users only see functions they have permission for.
-    accessible_functions = []
-    if user_profile and user_profile.get('role') == 'admin':
-        accessible_functions = functions
-    elif user_profile:
-        user_permissions = user_profile.get('permissions', [])
-        for func in functions:
-            if func.get('required_permission') in user_permissions:
-                accessible_functions.append(func)
-
-    # Debugging prints before rendering template
+    # Pass the full functions list to the template; template handles permissions for display
     print(f"DEBUG: user_profile for template: {user_profile}")
-    print(f"DEBUG: accessible_functions for template: {accessible_functions}")
+    print(f"DEBUG: functions list sent to template: {functions}")
 
-    return render_template('ptfunctioninterface.html', user_profile=user_profile, functions=accessible_functions)
+    return render_template('ptfunctioninterface.html', user_profile=user_profile, functions=functions)
 
 # 新增条形码生成页面路由
 @app.route('/barcode_generator.html')

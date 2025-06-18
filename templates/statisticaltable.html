@@ -38,7 +38,7 @@
         </div>
         <div class="flex flex-col">
           <label for="trackingNumberFilter" class="text-gray-600 font-medium mb-1 text-sm">运单号:</label>
-          <input type="text" id="trackingNumberFilter" placeholder="请输入运单号" class="px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600/50 focus:border-red-600 focus:outline-none w-full text-sm">
+          <input type="text" id="trackingNumberFilter" placeholder="请输入运单号 (多个请用逗号分隔)" class="px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600/50 focus:border-red-600 focus:outline-none w-full text-sm">
         </div>
         <div class="flex flex-col">
           <label for="merchantFilter" class="text-gray-600 font-medium mb-1 text-sm">商家:</label>
@@ -361,8 +361,16 @@
       queryBtn.addEventListener('click', async () => {
         const startDate = startDateFilter.value;
         const endDate = endDateFilter.value;
-        const trackingNumber = trackingNumberFilter.value;
+        let trackingNumber = trackingNumberFilter.value;
         const merchant = merchantFilter.value;
+
+        // 兼容多种分隔符：将空格和换行符替换为逗号，并清理多余的逗号
+        if (trackingNumber) {
+          trackingNumber = trackingNumber.replace(/\s+/g, ',') // 将一个或多个空格替换为逗号
+                                         .replace(/[\n\r]/g, ','); // 将换行符替换为逗号
+          // 移除开头和结尾的逗号，以及多个连续的逗号
+          trackingNumber = trackingNumber.split(',').filter(num => num.trim() !== '').join(',');
+        }
 
         // 调用新的 rpc 函数进行统一筛选
         let { data, error: finalError } = await supabase.rpc('get_shipping_costs_filtered', {
