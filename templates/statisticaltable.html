@@ -207,7 +207,8 @@
             const freightUnitPrice = (parseFloat(item.freight_unit_price) || 0).toFixed(2);
             const merchantName = item.merchant_name || '';
             const pieces = (parseInt(item.merchant_pieces) || 0);
-            const merchantSettleWeightDisplay = (parseFloat(item.merchant_weight) || 0).toFixed(3);
+            // 计算每个商户的结算重量： (商户的货物实重 / 整个运单的实重+纸箱) * 整个运单的总结算重量
+            const merchantSettleWeightDisplay = ((parseFloat(item.merchant_weight) || 0) / (parseFloat(item.actual_weight_with_box) || 1.0) * (parseFloat(item.total_settle_weight) || 0)).toFixed(3);
             const taxUnitPrice = (parseFloat(item.merchant_tax_unit_price) || 0).toFixed(2);
             const operatingFee = (parseFloat(item.merchant_operating_fee) || 0).toFixed(2);
             const subtotalFreight = (parseFloat(item.subtotal_freight) || 0).toFixed(2);

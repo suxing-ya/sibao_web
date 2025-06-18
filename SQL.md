@@ -4,6 +4,7 @@
 | merchants             | merchant_code          | text                     | NO          |
 | merchants             | merchant_name          | text                     | NO          |
 | merchants             | created_at             | timestamp with time zone | YES         |
+| merchants             | merchant_id_code       | text                     | YES         |
 | profiles              | id                     | uuid                     | NO          |
 | profiles              | username               | text                     | NO          |
 | profiles              | created_at             | timestamp with time zone | YES         |

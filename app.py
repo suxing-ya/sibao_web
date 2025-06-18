@@ -128,6 +128,7 @@ def admin_login():
                     session['user_id'] = user.id # Store user_id in session
                     session['username'] = profile_res.data['username'] # Use username from profiles
                     session['role'] = profile_res.data['role']
+                    session['email'] = email # Store email in session
                     return redirect(url_for('admin_dashboard'))
                 else:
                     return render_template('login_admin.html', login_error='用户档案未找到或权限不足')
@@ -254,7 +255,7 @@ def post_login_callback():
             # Backend redirects to the desired page after setting session
             return jsonify({"redirect_url": url_for('pt_function_interface')}), 200
         else:
-            return jsonify({"message": "用户档案未找到"}), 404
+            return jsonify({"message": "用户档案未找到或权限不足"}), 400 # Changed from render_template for POST request
     except Exception as e:
         import traceback
         traceback.print_exc() # Print full traceback
@@ -329,47 +330,99 @@ def index_html():
 @login_required # 确保只有登录用户可以访问
 def pt_function_interface():
     user_id = session.get('user_id')
-    user_email = session.get('email') # 从会话中获取用户的邮箱
-    if not user_id or not user_email:
-        # 理论上不会发生，因为有 @login_required，但作为回退
+    user_profile = None
+
+    if user_id:
+        try:
+            profile_query = supabase.from_('profiles').select('username, role, created_at, notes, permissions').eq('id', user_id).single()
+            profile_res = profile_query.execute()
+            if profile_res.data:
+                user_profile = profile_res.data
+                # Add email from session to user_profile for template display
+                user_profile['email'] = session.get('email', 'N/A')
+                # Convert permissions from JSON string to list if it exists
+                if isinstance(user_profile.get('permissions'), str):
+                    try:
+                        user_profile['permissions'] = json.loads(user_profile['permissions'])
+                    except json.JSONDecodeError:
+                        user_profile['permissions'] = [] # Handle invalid JSON
+                elif user_profile.get('permissions') is None:
+                    user_profile['permissions'] = [] # Ensure it's a list if null
+            else:
+                # If user profile not found, clear session and redirect to login
+                session.pop('logged_in', None)
+                session.pop('username', None)
+                session.pop('role', None)
+                session.pop('user_id', None)
+                session.pop('permissions', None) # Clear permissions as well
+                return redirect(url_for('user_login'))
+        except Exception as e:
+            print(f"Error fetching user profile from Supabase: {e}")
+            # Log the full traceback for more details
+            import traceback
+            traceback.print_exc()
+            session.pop('logged_in', None) # Clear session on error
+            session.pop('user_id', None)
+            session.pop('username', None)
+            session.pop('role', None)
+            session.pop('permissions', None)
+            return redirect(url_for('user_login')) # Redirect to login on error
+    else:
+        # If user_id is not in session, redirect to login
         return redirect(url_for('user_login'))
+    
+    # Define the functions available to users
+    # Each function has a name, description, the url_route it maps to,
+    # and the required permission key (matching permissions in the profiles table).
+    functions = [
+        {
+            'name': '货物工作流',
+            'description': 'Temu V2 货物包装工作流，实时了解物流情况',
+            'url_route': 'temu_y2gzl_html',
+            'required_permission': 'temu_y2gzl_html'
+        },
+        {
+            'name': '运费分摊核算',
+            'description': '计算每批货物的分摊费用，并支持数据保存、查询和导出。',
+            'url_route': 'expense_allocation_function',
+            'required_permission': 'expense_allocation_function'
+        },
+        {
+            'name': '成本核算',
+            'description': '进行各项成本数据统计和分析。',
+            'url_route': 'y2cost_html',
+            'required_permission': 'y2cost_html'
+        },
+        {
+            'name': '条形码生成',
+            'description': '快速生成并打印各类条形码，支持自定义内容。',
+            'url_route': 'barcode_generator_html',
+            'required_permission': 'barcode_generator_html'
+        },
+        {
+            'name': '统计功能',
+            'description': '查看各项业务数据统计概览。',
+            'url_route': 'statistical_table_html',
+            'required_permission': 'statistical_function' # 与 admin.html 中设置的权限标识符一致
+        }
+    ]
+    
+    # Filter functions based on user's role and permissions
+    # Admin sees all functions. Non-admin users only see functions they have permission for.
+    accessible_functions = []
+    if user_profile and user_profile.get('role') == 'admin':
+        accessible_functions = functions
+    elif user_profile:
+        user_permissions = user_profile.get('permissions', [])
+        for func in functions:
+            if func.get('required_permission') in user_permissions:
+                accessible_functions.append(func)
 
-    try:
-        # 从 Supabase 获取用户个人信息（不包括 email，因为 email 存在 auth.users 中，且已在 session 中）
-        profile_response = supabase.from_('profiles').select('username, role, created_at, notes, permissions').eq('id', user_id).single().execute()
-        user_profile_data = profile_response.data
+    # Debugging prints before rendering template
+    print(f"DEBUG: user_profile for template: {user_profile}")
+    print(f"DEBUG: accessible_functions for template: {accessible_functions}")
 
-        if not user_profile_data:
-            return "用户档案未找到", 404
-
-        # 将会话中的 email 添加到 user_profile_data，以便模板使用
-        user_profile_data['email'] = user_email
-        # 确保permissions是列表形式，便于前端直接判断
-        # 调试：打印原始的permissions值和类型
-        raw_permissions = user_profile_data.get('permissions')
-        print(f"DEBUG: Raw permissions for user {user_id}: {raw_permissions}, Type: {type(raw_permissions)}")
-        user_profile_data['permissions'] = json.loads(raw_permissions if raw_permissions else '[]')
-
-        # 模拟用户可用的功能列表
-        available_functions = [
-            {"name": "货物工作流", "description": "Temu Y2 货物流转工作流，实时了解物流情况", "url_route": "temu_y2gzl_html", "required_permission": "temu_y2gzl_html"},
-            {"name": "运费分摊核算", "description": "计算每项货物的分摊费用，并支持数据保存、查询和导出。", "url_route": "expense_allocation_function", "required_permission": "expense_allocation_function"},
-            {"name": "成本核算", "description": "进行各项成本的精确计算和分析。", "url_route": "y2cost_html", "required_permission": "y2cost_html"},
-            {"name": "条形码生成", "description": "快速生成并打印各类商品条形码，支持自定义内容和格式。", "url_route": "barcode_generator_html", "required_permission": "barcode_generator_html"},
-            {"name": "统计功能", "description": "查看各项业务数据的统计概览。", "url_route": "statistical_table_html", "required_permission": "statistical_table_html"},
-            # 以下是原有的通用功能，如果需要保留，请保留；如果需要移除，可以删除。
-            # {"name": "专属优惠", "description": "浏览仅为您提供的个性化优惠和折扣。"},
-            # {"name": "账户设置", "description": "管理您的个人资料、密码和偏好设置。"},
-            # {"name": "联系客服", "description": "快速联系我们的客服团队，获取帮助和支持。"},
-            # {"name": "我的收藏", "description": "管理您收藏的商品或服务。"},
-            # {"name": "消息中心", "description": "查看所有通知和站内消息。"},
-        ]
-
-        return render_template('ptfunctioninterface.html', user_profile=user_profile_data, functions=available_functions)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return "加载功能界面失败", 500
+    return render_template('ptfunctioninterface.html', user_profile=user_profile, functions=accessible_functions)
 
 # 新增条形码生成页面路由
 @app.route('/barcode_generator.html')
@@ -520,7 +573,7 @@ def delete_member(member_id):
 
 @app.route('/statisticaltable.html')
 @login_required
-@permission_required('statistical_table_html')
+@permission_required('statistical_function') # 修改权限标识符以保持一致性
 def statistical_table_html():
     return render_template('statisticaltable.html')
 

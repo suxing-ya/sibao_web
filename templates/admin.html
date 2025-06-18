@@ -293,7 +293,7 @@
         const closePermissionsDrawerBtn = document.getElementById('closePermissionsDrawerBtn');
         const permissionsDrawerOverlay = document.getElementById('permissionsDrawerOverlay');
         const showPermissionsDrawer = (memberId, username, currentPermissions) => {
-            document.getElementById('permissionMemberName').textContent = username;
+            document.getElementById('permissionUserName').textContent = username;
             document.getElementById('currentMemberIdForPermissions').value = memberId;
             
             // Reset all checkboxes
@@ -334,13 +334,15 @@
         const permTemuY2GzlHtml = document.getElementById('perm_temu_y2gzl_html');
         const permExpenseAllocationFunction = document.getElementById('perm_expense_allocation_function');
         const permBarcodeGeneratorHtml = document.getElementById('perm_barcode_generator_html');
+        const permStatisticalFunction = document.getElementById('perm_statistical_function'); // 新增：统计功能权限元素
 
         // 定义所有可能的功能权限及其对应的标识符
         const ALL_PERMISSIONS = {
             'y2cost_html': permY2CostHtml,
             'temu_y2gzl_html': permTemuY2GzlHtml,
             'expense_allocation_function': permExpenseAllocationFunction,
-            'barcode_generator_html': permBarcodeGeneratorHtml
+            'barcode_generator_html': permBarcodeGeneratorHtml,
+            'statistical_function': permStatisticalFunction // 新增：统计功能权限
         };
 
         if (permissionsForm) {
@@ -701,6 +703,10 @@
           <div class="flex items-center">
             <input type="checkbox" id="perm_barcode_generator_html" name="permissions" value="barcode_generator_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
             <label for="perm_barcode_generator_html" class="ml-2 block text-sm text-gray-900">条形码生成</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_statistical_function" name="permissions" value="statistical_function" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_statistical_function" class="ml-2 block text-sm text-gray-900">统计功能</label>
           </div>
         </div>
 
