@@ -586,49 +586,71 @@ def statistical_table_html():
 def update_shipping_cost():
     data = request.get_json()
     item_id = data.get('id')
-    merchant_name_to_update = data.get('merchant_name')
-    new_tax_unit_price = data.get('tax_unit_price')
-    new_operating_fee = data.get('operating_fee')
-    new_total_overall = data.get('total_overall') # This is the merchant-specific total overall
+    merchant_name = data.get('merchant_name')
+    tax_unit_price = data.get('tax_unit_price')
+    operating_fee = data.get('operating_fee')
+    total_overall = data.get('total_overall')
 
-    if not all([item_id, merchant_name_to_update, new_tax_unit_price is not None, new_operating_fee is not None, new_total_overall is not None]):
-        return jsonify({"message": "缺少必要的更新参数 (ID, 商家名称, 报税价, 操作费, 合计)"}), 400
+    if not item_id or merchant_name is None:
+        return jsonify({"message": "缺少必要的参数：ID 或商家名称"}), 400
 
     try:
-        # 1. Fetch the existing record
-        response = supabase.from_('shipping_costs').select('merchants').eq('id', item_id).single().execute()
+        # 从现有数据中提取merchants JSONB数组
+        current_data_res = supabase.from_('shipping_costs').select('merchants').eq('id', item_id).single().execute()
+        # 成功时 current_data_res.data 会包含数据，失败时会抛出异常，无需检查 .error
+        if not current_data_res.data:
+            return jsonify({"message": "未找到对应的数据或获取失败"}), 404
+
+        current_merchants = current_data_res.data.get('merchants', [])
+        updated_merchants = []
+        merchant_found = False
+
+        for merchant in current_merchants:
+            if merchant.get('name') == merchant_name:
+                # 更新匹配的商家数据
+                merchant['tax_unit_price'] = tax_unit_price
+                merchant['operating_fee'] = operating_fee
+                merchant['total_overall'] = total_overall # Ensure this is updated as well if needed
+                merchant_found = True
+            updated_merchants.append(merchant)
         
-        if response.data:
-            existing_merchants = response.data.get('merchants', [])
-            updated_merchants = []
-            merchant_found = False
+        if not merchant_found:
+             # 如果通过 merchants.name 没找到，尝试通过其他方式，或者根据逻辑判断是否需要添加新的商家记录
+             # For now, we assume merchant_name uniquely identifies an entry in the list for update
+             print(f"Warning: Merchant {merchant_name} not found in existing merchants array for ID {item_id}")
 
-            for merchant_obj in existing_merchants:
-                if merchant_obj.get('name') == merchant_name_to_update:
-                    # Found the merchant, update its fields
-                    merchant_obj['tax_unit_price'] = new_tax_unit_price
-                    merchant_obj['operating_fee'] = new_operating_fee
-                    merchant_obj['total_overall'] = new_total_overall # Update merchant-specific total_overall
-                    merchant_found = True
-                updated_merchants.append(merchant_obj)
+        # 更新整个 merchants JSONB 字段
+        update_res = supabase.from_('shipping_costs').update({'merchants': updated_merchants}).eq('id', item_id).execute()
 
-            if not merchant_found:
-                return jsonify({"message": f"未找到匹配的商家: {merchant_name_to_update}"}), 404
-
-            # 2. Update the 'merchants' JSONB array in the database
-            update_response = supabase.from_('shipping_costs').update({'merchants': updated_merchants}).eq('id', item_id).execute()
-
-            # 即使 update_response.count 为 0，只要没有发生错误，也认为是成功，因为目标状态已达到
-            if update_response.count is not None and update_response.count > 0:
-                return jsonify({"message": "记录更新成功！"}), 200
-            else:
-                return jsonify({"message": "记录未发生变化，无需更新。"}), 200 # 更改为 200 OK 状态码
-        else:
-            return jsonify({"message": "更新失败，未找到记录"}), 404
-
+        # 成功时 update_res.data 会包含数据，失败时会抛出异常，无需检查 .error
+        return jsonify({"message": "数据更新成功！"}), 200
     except Exception as e:
-        print(f"Error updating shipping cost for merchant: {e}")
-        return jsonify({"message": f"服务器内部错误: {str(e)}"}), 500
+        print(f"Exception in update_shipping_cost: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "服务器内部错误"}), 500
+
+@app.route('/api/shipping_costs/update_settlement_status', methods=['PUT'])
+@login_required
+@permission_required('statistical_function') # 假设统计功能页面的用户有权限修改状态
+def update_settlement_status():
+    data = request.get_json()
+    item_id = data.get('id')
+    new_status = data.get('settlement_status')
+
+    if not item_id or not new_status:
+        return jsonify({"success": False, "message": "缺少必要的参数。"}), 400
+
+    try:
+        update_res = supabase.from_('shipping_costs').update({'settlement_status': new_status}).eq('id', item_id).execute()
+
+        # 成功时 update_res.data 会包含数据，失败时会抛出异常，无需检查 .error
+        return jsonify({"success": True, "message": "结款状态更新成功！"}), 200
+    except Exception as e:
+        print(f"Exception updating settlement status: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": f"服务器内部错误: {e}"}), 500
 
 # Removed SQLite initialization
 if __name__ == '__main__':

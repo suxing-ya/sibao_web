@@ -21,6 +21,7 @@
 | shipping_costs        | shipment_id            | text                     | YES         |
 | shipping_costs        | merchants              | jsonb                    | YES         |
 | shipping_costs        | order_number           | text                     | YES         |
+| shipping_costs        | settlement_status      | text                     | YES         |
 | temu_shipment_details | id                     | bigint                   | NO          |
 | temu_shipment_details | workflow_id            | bigint                   | NO          |
 | temu_shipment_details | merchant               | text                     | NO          |
