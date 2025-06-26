@@ -31,9 +31,38 @@
   <script>
     let supabase; // Declare supabase as a global variable
   </script>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    
+    /* 隐藏数字输入框的上下箭头 */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+    
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+    }
+  </style>
 </head>
 <body class="bg-gray-50 font-inter text-neutral-dark">
-  <div class="container mx-auto px-4 py-8 max-w-6xl">
+  <div class="container mx-auto px-4 py-8 max-w-full xl:max-w-7xl">
     <!-- 顶部操作栏 -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <!-- 新增：页面标题和返回按钮 -->
@@ -67,82 +96,183 @@
     </div>
     
     <!-- 顶部汇总信息 -->
-    <div class="bg-white rounded-xl p-6 mb-8" style="box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4">
-        <!-- Col 1: ID & Pricing -->
-        <div class="space-y-3">
-          <div class="flex items-center">
-            <label for="dateInput" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">日期:</label>
-            <input type="date" id="dateInput" value="2025-05-29" 
-                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
-          </div>
-          <div class="flex items-center">
-            <label for="orderNumber" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">表单编号:</label>
-            <input type="text" id="orderNumber" 
-                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
-          </div>
-          <div class="flex items-center">
-            <label for="trackingNumber" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应快递单号:</label>
-            <input type="text" id="trackingNumber" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
-          </div>
-           <div class="flex items-center">
-            <label for="shipmentId" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">对应货件ID:</label>
-            <input type="text" id="shipmentId" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
-          </div>
-           <div class="flex items-center">
-            <label for="freightUnitPrice" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">运费单价:</label>
-            <input type="number" id="freightUnitPrice" value="68" min="0" step="0.01"
-                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-24 text-right">
-            <span class="ml-2">元/kg</span>
-          </div>
-        </div>
-        
-        <!-- Col 2: Weights -->
-        <div class="space-y-3">
-          <div class="flex items-center">
-            <label for="totalSettleWeight" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">总结算重量:</label>
-            <input type="number" id="totalSettleWeight" step="0.001"
-                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full text-right font-semibold bg-yellow-100">
-            <span class="ml-2">kg</span>
-          </div>
-           <div class="flex items-center">
-            <label for="actualWeightWithBox" class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">实重+纸箱:</label>
-            <input type="number" id="actualWeightWithBox" step="0.001"
-                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary w-full text-right font-semibold bg-yellow-100">
-            <span class="ml-2">kg</span>
-          </div>
-          <div class="flex items-center">
-            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">货物实重总和:</label>
-            <span id="actualWeightSum" class="font-semibold text-gray-800">8.220 kg</span>
-          </div>
-          <div class="flex items-center">
-            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">抛出:</label>
-            <span id="throwOut" class="font-semibold text-gray-800">3.556 kg</span>
-          </div>
-        </div>
-        
-        <!-- Col 3: Summary -->
-        <div class="space-y-3">
-          <div class="flex items-center">
-            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">今日运费:</label>
-            <span id="totalFreight" class="font-semibold text-lg text-primary">¥893.04</span>
-          </div>
-           <div class="flex items-center">
-            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">纸箱重量:</label>
-            <span id="boxWeight" class="font-semibold text-gray-800">1.357 kg</span>
-          </div>
-          <div class="flex items-center">
-            <label class="w-24 sm:w-32 text-gray-600 font-medium shrink-0">商户数量:</label>
-            <span id="merchantCount" class="font-semibold text-gray-800">4</span>
-          </div>
-        </div>
-      </div>
+    <div class="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 rounded-2xl p-8 mb-8 border border-blue-100/50" 
+         style="box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);">
       
-      <!-- 数据可视化 -->
-      <div class="mt-8">
-        <h3 class="text-lg font-semibold mb-4">费用分布</h3>
-        <div class="h-64">
-          <canvas id="distributionChart"></canvas>
+      <!-- 标题区域 -->
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+          发货费用分摊表
+        </h2>
+        <p class="text-gray-600 text-sm">高效管理和计算每日发货费用</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- 左列: 基础信息 -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <div class="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full mr-3"></div>
+            基础信息
+          </h3>
+          
+          <div class="space-y-4">
+            <div class="group">
+              <label for="dateInput" class="block text-sm font-medium text-gray-700 mb-2">日期</label>
+              <input type="date" id="dateInput" value="2025-05-29" 
+                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl 
+                            focus:ring-4 focus:ring-blue-100 focus:border-blue-400 
+                            hover:border-blue-300 transition-all duration-300
+                            text-gray-800 font-medium shadow-sm">
+            </div>
+            
+            <div class="group">
+              <label for="orderNumber" class="block text-sm font-medium text-gray-700 mb-2">表单编号</label>
+              <input type="text" id="orderNumber" 
+                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl 
+                            focus:ring-4 focus:ring-blue-100 focus:border-blue-400 
+                            hover:border-blue-300 transition-all duration-300
+                            text-gray-800 font-medium shadow-sm"
+                     placeholder="自动生成或手动输入">
+            </div>
+            
+            <div class="group">
+              <label for="trackingNumber" class="block text-sm font-medium text-gray-700 mb-2">快递单号</label>
+              <input type="text" id="trackingNumber" 
+                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl 
+                            focus:ring-4 focus:ring-blue-100 focus:border-blue-400 
+                            hover:border-blue-300 transition-all duration-300
+                            text-gray-800 font-medium shadow-sm"
+                     placeholder="请输入快递单号">
+            </div>
+            
+            <div class="group">
+              <label for="shipmentId" class="block text-sm font-medium text-gray-700 mb-2">货件ID</label>
+              <input type="text" id="shipmentId" 
+                     class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl 
+                            focus:ring-4 focus:ring-blue-100 focus:border-blue-400 
+                            hover:border-blue-300 transition-all duration-300
+                            text-gray-800 font-medium shadow-sm"
+                     placeholder="请输入货件ID">
+            </div>
+          </div>
+        </div>
+        
+        <!-- 中列: 重量与费用 -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <div class="w-1 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
+            重量与费用
+          </h3>
+          
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                              <div class="group">
+                  <label for="freightUnitPrice" class="block text-sm font-medium text-gray-700 mb-2">运费单价</label>
+                  <input type="number" id="freightUnitPrice" value="" min="0" step="0.01"
+                         class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl 
+                                focus:ring-4 focus:ring-blue-100 focus:border-blue-400 
+                                hover:border-blue-300 transition-all duration-300
+                                text-gray-800 font-medium shadow-sm text-center"
+                         placeholder="请输入运费单价">
+                </div>
+              
+              <div class="group">
+                <label for="boxCountInput" class="block text-sm font-medium text-gray-700 mb-2">箱数</label>
+                <div class="relative">
+                  <input type="number" id="boxCountInput" min="0" step="1" value=""
+                         class="w-full px-4 py-3 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl 
+                                focus:ring-4 focus:ring-orange-100 focus:border-orange-400 focus:bg-white
+                                hover:border-orange-300 hover:shadow-md transition-all duration-300
+                                text-gray-800 font-semibold shadow-sm text-right pr-10"
+                         placeholder="0">
+                  <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-orange-600 font-medium">箱</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="group">
+              <label for="totalSettleWeight" class="block text-sm font-medium text-gray-700 mb-2">总结算重量</label>
+              <div class="relative">
+                <input type="number" id="totalSettleWeight" step="0.001"
+                       class="w-full px-4 py-3 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl 
+                              focus:ring-4 focus:ring-yellow-100 focus:border-yellow-400 
+                              hover:border-yellow-400 transition-all duration-300
+                              text-gray-800 font-bold shadow-sm text-right pr-10">
+                <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-600 font-medium">kg</span>
+              </div>
+            </div>
+            
+            <div class="group">
+              <label for="actualWeightWithBox" class="block text-sm font-medium text-gray-700 mb-2">实重+纸箱</label>
+              <div class="relative">
+                <input type="number" id="actualWeightWithBox" step="0.001"
+                       class="w-full px-4 py-3 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl 
+                              focus:ring-4 focus:ring-yellow-100 focus:border-yellow-400 
+                              hover:border-yellow-400 transition-all duration-300
+                              text-gray-800 font-bold shadow-sm text-right pr-10">
+                <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-600 font-medium">kg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 右列: 汇总信息 -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <div class="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-3"></div>
+            汇总信息
+          </h3>
+          
+          <div class="space-y-4">
+            <!-- 今日运费 - 突出显示 -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-4 text-white">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium opacity-90">今日运费</span>
+                <span id="totalFreight" class="text-2xl font-bold">¥893.04</span>
+              </div>
+            </div>
+            
+            <!-- 其他汇总信息 -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                <div class="text-xs text-gray-500 mb-1">货物实重</div>
+                <div id="actualWeightSum" class="font-semibold text-gray-800">8.220 kg</div>
+              </div>
+              
+              <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                <div class="text-xs text-gray-500 mb-1">纸箱重量</div>
+                <div id="boxWeight" class="font-semibold text-gray-800">1.357 kg</div>
+              </div>
+              
+              <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                <div class="text-xs text-gray-500 mb-1">抛出重量</div>
+                <div id="throwOut" class="font-semibold text-gray-800">3.556 kg</div>
+              </div>
+              
+              <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                <div class="text-xs text-gray-500 mb-1">箱数</div>
+                <div id="boxCount" class="font-semibold text-gray-800">0</div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+              <div class="text-xs text-gray-500 mb-1">商户数量</div>
+              <div id="merchantCount" class="font-semibold text-gray-800 text-center">4</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 费用分布图表 - 移动到右上角 -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <div class="w-1 h-6 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full mr-3"></div>
+            费用分布
+          </h3>
+          <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+            <div class="h-64">
+              <canvas id="distributionChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -152,134 +282,134 @@
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="bg-gray-50 text-left">
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">序号</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs" style="min-width: 160px;">商户</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">件数</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">货物实重 (kg)</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">比例</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">占纸箱 (kg)</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">占抛出 (kg)</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">结算重量 (kg)</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs" style="min-width: 110px;">合计金额 (元)</th>
-              <th class="px-1 py-3 sm:px-2 sm:py-4 font-semibold text-gray-600 text-xs">操作</th>
+            <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">序号</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200" style="min-width: 140px;">商户</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">件数</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">货物实重 (kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">比例</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占纸箱 (kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占抛出 (kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">结算重量 (kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">合计金额 (元)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center">操作</th>
             </tr>
           </thead>
           <tbody id="detailTable">
-            <tr class="border-b hover:bg-gray-50 transition-colors">
-              <td class="px-2 py-3 sm:px-6 sm:py-4">1</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
-                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
+            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
+              <td class="px-3 py-2 text-center text-sm">1</td>
+              <td class="px-3 py-2 text-center" style="min-width: 140px;">
+                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="3.110" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="3.110" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">37.84%</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.513" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">37.84%</td>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.513" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1.345" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1.345" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">4.969</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">337.88</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
-                  <i class="fa fa-trash"></i>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">4.969</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">337.88</td>
+              <td class="px-3 py-2 text-center">
+                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
+                  <i class="fa fa-trash text-sm"></i>
                 </button>
               </td>
             </tr>
-            <tr class="border-b hover:bg-gray-50 transition-colors">
-              <td class="px-2 py-3 sm:px-6 sm:py-4">2</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
-                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
+            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
+              <td class="px-3 py-2 text-center text-sm">2</td>
+              <td class="px-3 py-2 text-center" style="min-width: 140px;">
+                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.480" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.480" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">5.84%</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.079" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">5.84%</td>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.079" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.208" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.208" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0.767</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">52.15</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
-                  <i class="fa fa-trash"></i>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">0.767</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">52.15</td>
+              <td class="px-3 py-2 text-center">
+                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
+                  <i class="fa fa-trash text-sm"></i>
                 </button>
               </td>
             </tr>
-            <tr class="border-b hover:bg-gray-50 transition-colors">
-              <td class="px-2 py-3 sm:px-6 sm:py-4">3</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
-                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
+            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
+              <td class="px-3 py-2 text-center text-sm">3</td>
+              <td class="px-3 py-2 text-center" style="min-width: 140px;">
+                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1.070" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1.070" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">13.02%</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.177" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">13.02%</td>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.177" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.463" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.463" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">1.710</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">116.25</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
-                  <i class="fa fa-trash"></i>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">1.710</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">116.25</td>
+              <td class="px-3 py-2 text-center">
+                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
+                  <i class="fa fa-trash text-sm"></i>
                 </button>
               </td>
             </tr>
-            <tr class="border-b hover:bg-gray-50 transition-colors">
-              <td class="px-2 py-3 sm:px-6 sm:py-4">4</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
-                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
+            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
+              <td class="px-3 py-2 text-center text-sm">4</td>
+              <td class="px-3 py-2 text-center" style="min-width: 140px;">
+                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="3.560" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="3.560" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">43.31%</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="0.588" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">43.31%</td>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="0.588" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <input type="number" value="1.540" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+              <td class="px-3 py-2 text-center">
+                <input type="number" value="1.540" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">5.688</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">386.77</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">
-                <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
-                  <i class="fa fa-trash"></i>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">5.688</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">386.77</td>
+              <td class="px-3 py-2 text-center">
+                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
+                  <i class="fa fa-trash text-sm"></i>
                 </button>
               </td>
             </tr>
-            <tr class="bg-gray-50 font-semibold">
-              <td colspan="2" class="px-2 py-3 sm:px-6 sm:py-4 text-right">合计:</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-pieces">4</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-actual-weight">8.220</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4">100.00%</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-box-weight">1.357</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-throw">3.556</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-settle-weight font-bold">13.133</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4 total-amount font-bold" style="min-width: 110px;">893.04</td>
-              <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
+            <tr class="bg-gradient-to-r from-blue-50 to-indigo-50 font-semibold border-t-2 border-blue-200">
+              <td colspan="2" class="px-3 py-2 text-center text-sm font-bold text-gray-700">合计:</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-pieces">4</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-actual-weight">8.220</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600">100.00%</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-box-weight">1.357</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-throw">3.556</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-indigo-600 total-settle-weight">13.133</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-green-600 total-amount">893.04</td>
+              <td class="px-3 py-2 text-center"></td>
             </tr>
           </tbody>
         </table>
@@ -441,36 +571,36 @@
       const tbody = document.getElementById('detailTable');
       
       const newRow = document.createElement('tr');
-      newRow.className = 'border-b hover:bg-gray-50 transition-colors';
+      newRow.className = 'border-b border-gray-200 hover:bg-blue-50/50 transition-colors';
       newRow.innerHTML = `
-        <td class="px-2 py-3 sm:px-6 sm:py-4"></td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4" style="min-width: 140px;">
-          <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" list="merchantList">
+        <td class="px-3 py-2 text-center text-sm">${tbody.querySelectorAll('tr').length}</td>
+        <td class="px-3 py-2 text-center" style="min-width: 140px;">
+          <input type="text" value="${name}" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
         </td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <input type="number" value="${pieces}" class="pieces-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="1">
+        <td class="px-3 py-2 text-center">
+          <input type="number" value="${pieces}" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
         </td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <input type="number" value="${weight}" class="weight-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-gray-300" step="0.001">
+        <td class="px-3 py-2 text-center">
+          <input type="number" value="${weight}" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
         </td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4 rate-cell">0.00%</td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <input type="number" value="0" class="box-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+        <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">0.00%</td>
+        <td class="px-3 py-2 text-center">
+          <input type="number" value="0" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
         </td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <input type="number" value="0" class="throw-input w-full px-2 py-1 text-right border border-transparent rounded focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-100" step="0.001" readonly>
+        <td class="px-3 py-2 text-center">
+          <input type="number" value="0" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
         </td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4 settle-weight-cell font-medium">0</td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4 amount-cell font-medium" style="min-width: 110px;">0</td>
-        <td class="px-2 py-3 sm:px-6 sm:py-4">
-          <button class="delete-row text-red-500 hover:text-red-700 transition-colors">
-            <i class="fa fa-trash"></i>
+        <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">0</td>
+        <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">0</td>
+        <td class="px-3 py-2 text-center">
+          <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
+            <i class="fa fa-trash text-sm"></i>
           </button>
         </td>
       `;
       
       // 在合计行前插入新行
-      const totalRow = tbody.querySelector('.bg-gray-50');
+      const totalRow = tbody.querySelector('.bg-gradient-to-r from-blue-50 to-indigo-50');
       tbody.insertBefore(newRow, totalRow);
       
       // 重新编号
@@ -489,7 +619,7 @@
     
     // 重新编号行
     function renumberRows() {
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
       rows.forEach((row, index) => {
         row.querySelector('td:first-child').textContent = index + 1;
       });
@@ -518,10 +648,11 @@
             tracking_number: document.getElementById('trackingNumber').value,
             shipment_id: document.getElementById('shipmentId').value,
             order_number: document.getElementById('orderNumber').value,
+            box_count: parseInt(document.getElementById('boxCountInput').value, 10) || 0,
             merchants: []
         };
 
-        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
         rows.forEach(row => {
             dataToSave.merchants.push({
                 name: row.querySelector('.merchant-input').value,
@@ -563,7 +694,7 @@
         const orderNumberFromUrl = urlParams.get('order_number');
         
         const tbody = document.getElementById('detailTable');
-        const rows = tbody.querySelectorAll('tr:not(.bg-gray-50)');
+        const rows = tbody.querySelectorAll('tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
         rows.forEach(row => row.remove()); // Clear existing rows
 
         const dateInput = document.getElementById('dateInput');
@@ -587,12 +718,13 @@
 
                 if (data) {
                     dateInput.value = data.date || '';
-                    document.getElementById('freightUnitPrice').value = data.freight_unit_price || '68';
+                    document.getElementById('freightUnitPrice').value = data.freight_unit_price || '';
                     document.getElementById('totalSettleWeight').value = data.total_settle_weight || '';
                     document.getElementById('actualWeightWithBox').value = data.actual_weight_with_box || '';
                     document.getElementById('trackingNumber').value = data.tracking_number || '';
                     document.getElementById('shipmentId').value = data.shipment_id || '';
                     orderNumberInput.value = data.order_number || '';
+                    document.getElementById('boxCountInput').value = data.box_count || '';
 
                     if (data.merchants && data.merchants.length > 0) {
                         data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
@@ -675,11 +807,12 @@
      * 重置表单顶部输入框的值。
      */
     function resetFormInputs() {
-        document.getElementById('freightUnitPrice').value = '68';
+                  document.getElementById('freightUnitPrice').value = '';
         document.getElementById('totalSettleWeight').value = '';
         document.getElementById('actualWeightWithBox').value = '';
         document.getElementById('trackingNumber').value = '';
         document.getElementById('shipmentId').value = '';
+        document.getElementById('boxCountInput').value = '';
         // document.getElementById('orderNumber').value = ''; // 表单编号由 generateNewOrderNumber 管理
     }
 
@@ -707,7 +840,7 @@
         }
       }).then((result) => {
         if (result.isConfirmed) {
-          const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+          const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
           
           rows.forEach(row => {
             row.querySelector('.merchant-input').value = '';
@@ -721,6 +854,7 @@
           document.getElementById('totalSettleWeight').value = '';
           document.getElementById('actualWeightWithBox').value = '';
           document.getElementById('orderNumber').value = '';
+          document.getElementById('boxCountInput').value = '';
           
           // 重新计算以更新所有字段为0或默认状态
           calculateAll();
@@ -750,7 +884,7 @@
      */
     function calculateAll(event) {
       const trigger = event ? event.target : null;
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
       const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
       
       // 1. Calculate totalActualWeight (sum from table)
@@ -844,6 +978,10 @@
       document.getElementById('throwOut').textContent = totalThrow.toFixed(3) + ' kg';
       document.getElementById('totalFreight').textContent = '¥' + finalTotalAmountFromTable.toFixed(2);
       
+      // 更新箱数显示
+      const boxCountValue = parseInt(document.getElementById('boxCountInput').value, 10) || 0;
+      document.getElementById('boxCount').textContent = boxCountValue;
+      
       updateChart();
     }
     
@@ -898,7 +1036,7 @@
       const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
       
       // 添加表格数据
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gray-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         const rowData = [];
@@ -983,6 +1121,21 @@
             console.error('填充商户列表时发生异常:', e.message);
         }
     }
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化商户数据列表
+        populateMerchantDatalist();
+        
+        // 添加箱数输入框的事件监听器
+        const boxCountInput = document.getElementById('boxCountInput');
+        if (boxCountInput) {
+            boxCountInput.addEventListener('input', function() {
+                const boxCountValue = parseInt(this.value, 10) || 0;
+                document.getElementById('boxCount').textContent = boxCountValue;
+            });
+        }
+    });
   </script>
 </body>
 </html>

@@ -87,6 +87,10 @@
                 <div class="resizer absolute top-0 right-0 w-2 h-full cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
               </th>
               <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider relative group">
+                表单编号
+                <div class="resizer absolute top-0 right-0 w-2 h-full cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+              </th>
+              <th class="px-4 py-2 text-xs font-medium text-gray-600 uppercase tracking-wider relative group">
                 商家
                 <div class="resizer absolute top-0 right-0 w-2 h-full cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
               </th>
@@ -127,7 +131,7 @@
           </tbody>
           <tfoot class="bg-gray-50">
             <tr class="font-bold text-gray-700">
-              <td colspan="4" class="px-4 py-2 text-right">合计:</td>
+              <td colspan="5" class="px-4 py-2 text-right">合计:</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 total-settle-weight-sum">0.000</td>
               <td class="px-4 py-2"></td> <!-- 货代价 -->
               <td class="px-4 py-2"></td> <!-- 报税价 -->
@@ -223,9 +227,9 @@
 
         const rows = document.querySelectorAll('#statisticalSummaryBody tr');
         rows.forEach(row => {
-          totalSettleWeightSum += parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0; // 结算重量 (现在是第5列)
+          totalSettleWeightSum += parseFloat(row.querySelector('td:nth-child(6)').textContent) || 0; // 结算重量 (第6列)
           subtotalFreightSum += parseFloat(row.querySelector('.subtotal-freight').textContent) || 0; // 小计运费
-          piecesSum += parseInt(row.querySelector('td:nth-child(9)').textContent) || 0; // 件数 (现在是第9列)
+          piecesSum += parseInt(row.querySelector('td:nth-child(10)').textContent) || 0; // 件数 (第10列)
           subtotalOperatingFeeSum += parseFloat(row.querySelector('.subtotal-operating-fee').textContent) || 0; // 小计操作费
           totalOverallSum += parseFloat(row.querySelector('.total-overall').textContent) || 0; // 合计
         });
@@ -267,6 +271,7 @@
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${date}</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${trackingNumber}</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${item.order_number || ''}</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantName}</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${merchantSettleWeightDisplay}</td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${freightUnitPrice}</td>
@@ -298,8 +303,8 @@
               const currentTaxUnitPrice = parseFloat(newTaxInput.value) || 0;
               const currentOperatingFee = parseFloat(newOperatingInput.value) || 0;
 
-              const currentMerchantSettleWeight = parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0; // 现在是第5列
-              const currentPieces = parseFloat(row.querySelector('td:nth-child(9)').textContent) || 0; // 现在是第9列
+              const currentMerchantSettleWeight = parseFloat(row.querySelector('td:nth-child(6)').textContent) || 0; // 现在是第6列
+              const currentPieces = parseFloat(row.querySelector('td:nth-child(10)').textContent) || 0; // 现在是第10列
 
               const newSubtotalFreight = (currentMerchantSettleWeight * currentTaxUnitPrice).toFixed(2);
               const newSubtotalOperatingFee = (currentPieces * currentOperatingFee).toFixed(2);
@@ -369,7 +374,7 @@
             });
           });
         } else {
-          statisticalSummaryBody.innerHTML = `<tr><td colspan="12" class="px-4 py-2 text-center text-gray-500">没有找到匹配的数据。</td></tr>`;
+          statisticalSummaryBody.innerHTML = `<tr><td colspan="13" class="px-4 py-2 text-center text-gray-500">没有找到匹配的数据。</td></tr>`;
         }
         updateTotalsDisplay(); // Ensure totals are updated after initial render
       };
@@ -466,30 +471,90 @@
         let trackingNumber = trackingNumberFilter.value;
         const merchant = merchantFilter.value;
 
-        // 兼容多种分隔符：将空格和换行符替换为逗号，并清理多余的逗号
-        if (trackingNumber) {
-          trackingNumber = trackingNumber.replace(/\s+/g, ',') // 将一个或多个空格替换为逗号
-                                         .replace(/[\n\r]/g, ','); // 将换行符替换为逗号
-          // 移除开头和结尾的逗号，以及多个连续的逗号
-          trackingNumber = trackingNumber.split(',').filter(num => num.trim() !== '').join(',');
+        // 直接从 shipping_costs 表查询数据，确保能获取到 order_number 字段
+        let query = supabase.from('shipping_costs').select(`
+          id, date, tracking_number, order_number, freight_unit_price, 
+          total_settle_weight, actual_weight_with_box, settlement_status, merchants
+        `);
+        
+        // 应用筛选条件
+        if (startDate) {
+          query = query.gte('date', startDate);
         }
-
-        // 调用新的 rpc 函数进行统一筛选
-        let { data, error: finalError } = await supabase.rpc('get_shipping_costs_filtered', {
-          merchant_name_param: merchant || null,
-          start_date_param: startDate || null,
-          end_date_param: endDate || null,
-          tracking_numbers_param: trackingNumber || null
-        });
-
-        finalData = data; // Assign to the global finalData
-
-        console.log('Supabase Query Data:', finalData); // 打印查询到的数据
+        if (endDate) {
+          query = query.lte('date', endDate);
+        }
+        if (trackingNumber) {
+          const trackingNumbers = trackingNumber.split(',').map(num => num.trim()).filter(num => num !== '');
+          if (trackingNumbers.length === 1) {
+            query = query.eq('tracking_number', trackingNumbers[0]);
+          } else if (trackingNumbers.length > 1) {
+            query = query.in('tracking_number', trackingNumbers);
+          }
+        }
+        
+        let { data: rawData, error: finalError } = await query.order('date', { ascending: false });
+        
+        console.log('Supabase Raw Data:', rawData); // 打印原始查询数据
         console.log('Supabase Query Error:', finalError);
+        
+        // 将数据展开为每个商家一行的格式
+        const expandedData = [];
+        if (rawData && !finalError) {
+          rawData.forEach(item => {
+            if (item.merchants && Array.isArray(item.merchants)) {
+              item.merchants.forEach(merchantData => {
+                // 商家名称筛选
+                if (!merchant || merchantData.name.toLowerCase().includes(merchant.toLowerCase())) {
+                  const merchantWeight = parseFloat(merchantData.weight) || 0;
+                  const merchantPieces = parseInt(merchantData.pieces) || 0;
+                  const merchantTaxUnitPrice = parseFloat(merchantData.tax_unit_price) || 0;
+                  const merchantOperatingFee = parseFloat(merchantData.operating_fee) || 0;
+                  
+                  // 计算商家结算重量（按重量比例分配）
+                  const totalActualWeight = parseFloat(item.actual_weight_with_box) || 1;
+                  const merchantSettleWeight = (merchantWeight / totalActualWeight) * (parseFloat(item.total_settle_weight) || 0);
+                  
+                  // 计算费用
+                  const subtotalFreight = merchantSettleWeight * merchantTaxUnitPrice;
+                  const subtotalOperatingFee = merchantPieces * merchantOperatingFee;
+                  const totalOverall = subtotalFreight + subtotalOperatingFee;
+                  
+                  expandedData.push({
+                    id: item.id,
+                    date: item.date,
+                    tracking_number: item.tracking_number,
+                    order_number: item.order_number, // 关键：确保包含表单编号
+                    freight_unit_price: item.freight_unit_price,
+                    total_settle_weight: merchantSettleWeight, // 商家的结算重量
+                    actual_weight_with_box: item.actual_weight_with_box,
+                    settlement_status: item.settlement_status,
+                    merchant_name: merchantData.name,
+                    merchant_weight: merchantWeight,
+                    merchant_pieces: merchantPieces,
+                    merchant_tax_unit_price: merchantTaxUnitPrice,
+                    merchant_operating_fee: merchantOperatingFee,
+                    subtotal_freight: subtotalFreight,
+                    subtotal_operating_fee: subtotalOperatingFee,
+                    total_overall: totalOverall
+                  });
+                }
+              });
+            }
+          });
+        }
+        
+        finalData = expandedData; // 赋值给全局变量
+
+        // 调试：检查第一条数据是否包含order_number字段
+        if (finalData && finalData.length > 0) {
+          console.log('第一条处理后数据详情:', finalData[0]);
+          console.log('order_number字段值:', finalData[0].order_number);
+        }
 
         if (finalError) {
           console.error('查询统计数据失败:', finalError.message);
-          statisticalSummaryBody.innerHTML = `<tr><td colspan="12" class="px-4 py-2 text-center text-red-500">加载失败: ${finalError.message}</td></tr>`;
+          statisticalSummaryBody.innerHTML = `<tr><td colspan="13" class="px-4 py-2 text-center text-red-500">加载失败: ${finalError.message}</td></tr>`;
           document.querySelector('.total-settle-weight-sum').textContent = '0.000';
           document.querySelector('.subtotal-freight-sum').textContent = '0.00';
           document.querySelector('.pieces-sum').textContent = '0';
@@ -783,6 +848,10 @@
             else if (cellIndex === 2) { // Assuming Tracking Number is the third column (index 2)
                 rowData.push(cell.textContent.trim()); // Remove the prefix with \' to force text in Excel
             }
+            // For '表单编号' column, ensure it's treated as text
+            else if (cellIndex === 3) { // Form Number is the fourth column (index 3)
+                rowData.push(cell.textContent.trim()); // Treat as text in Excel
+            }
             else {
               rowData.push(cell.textContent.trim());
             }
@@ -800,11 +869,11 @@
           footerData[0] = footerRow.querySelector('td:nth-child(1)').textContent.trim();
 
           // Find and assign values to their correct column indices
-          footerData[4] = footerRow.querySelector('.total-settle-weight-sum').textContent.trim(); // 结算重量 - Col 5 (index 4)
-          footerData[7] = footerRow.querySelector('.subtotal-freight-sum').textContent.trim(); // 小计运费 - Col 8 (index 7)
-          footerData[8] = footerRow.querySelector('.pieces-sum').textContent.trim(); // 件数 - Col 9 (index 8)
-          footerData[10] = footerRow.querySelector('.subtotal-operating-fee-sum').textContent.trim(); // 小计操作费 - Col 11 (index 10)
-          footerData[11] = footerRow.querySelector('.total-overall-sum').textContent.trim(); // 合计 - Col 12 (index 11)
+          footerData[5] = footerRow.querySelector('.total-settle-weight-sum').textContent.trim(); // 结算重量 - Col 6 (index 5)
+          footerData[8] = footerRow.querySelector('.subtotal-freight-sum').textContent.trim(); // 小计运费 - Col 9 (index 8)
+          footerData[9] = footerRow.querySelector('.pieces-sum').textContent.trim(); // 件数 - Col 10 (index 9)
+          footerData[11] = footerRow.querySelector('.subtotal-operating-fee-sum').textContent.trim(); // 小计操作费 - Col 12 (index 11)
+          footerData[12] = footerRow.querySelector('.total-overall-sum').textContent.trim(); // 合计 - Col 13 (index 12)
 
           ws_data.push(footerData);
       }

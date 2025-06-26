@@ -44,6 +44,31 @@
       background-color: #f3f4f6; /* Tailwind gray-100 */
       transition: background-color 0.2s ease-in-out;
     }
+    /* 商家输入字段的特殊样式 */
+    .merchant-input:not([readonly]) {
+      position: relative;
+      cursor: pointer;
+    }
+    .merchant-input:not([readonly]):hover {
+      background-color: #f0f9ff !important;
+      border: 1px solid #60a5fa !important;
+    }
+    .merchant-input:not([readonly]):focus {
+      background-color: #f0f9ff !important;
+      border: 1px solid #3b82f6 !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    /* 为商家输入框添加下拉箭头提示 */
+    .merchant-input:not([readonly])::after {
+      content: '▼';
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+      font-size: 10px;
+      pointer-events: none;
+    }
     /* Detail Sidebar Styles */
     #detailSidebar {
       width: 100%; /* Default for mobile */
@@ -219,10 +244,18 @@
         <tbody id="detailTableBody2" class="bg-white divide-y divide-gray-200">
           <!-- Detail sub-rows will be populated here -->
           <tr>
-            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
-            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200">
+              <input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none merchant-input" readonly list="merchantsList" autocomplete="off" placeholder="点击选择商家" title="编辑模式下可选择商家">
+            </td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200">
+              <input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="数量" title="编辑模式下可输入数量">
+            </td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200">
+              <input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="扫描渠道" title="编辑模式下可输入扫描渠道">
+            </td>
+            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200">
+              <input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="备注" title="编辑模式下可输入备注">
+            </td>
           </tr>
         </tbody>
         <tfoot>
@@ -284,6 +317,8 @@
     // 函数：加载商家数据并填充datalist
     async function loadMerchantsDatalist() {
         const merchantsList = document.getElementById('merchantsList');
+        if (!merchantsList) return;
+        
         merchantsList.innerHTML = ''; // 清空现有选项
 
         try {
@@ -294,17 +329,45 @@
 
             if (error) {
                 console.error('Error fetching merchants:', error.message);
-                // 可以选择显示一个用户友好的错误消息
-            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '商家数据加载失败',
+                    text: '无法加载商家列表，请刷新页面重试。',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            } else if (data && data.length > 0) {
+                console.log(`成功加载 ${data.length} 个商家`);
                 data.forEach(merchant => {
                     const option = document.createElement('option');
                     option.value = merchant.merchant_name; // 当用户选择时，输入框填充商家名称
                     option.textContent = `${merchant.merchant_code} - ${merchant.merchant_name}`; // 下拉列表中显示代号和名称
                     merchantsList.appendChild(option);
                 });
+                
+                // 显示加载成功的提示
+                console.log('商家数据加载完成，可通过下拉菜单选择');
+            } else {
+                console.log('未找到商家数据');
+                // 添加一个提示选项
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '未找到商家数据，请联系管理员';
+                merchantsList.appendChild(option);
             }
         } catch (e) {
             console.error("Error loading merchants datalist:", e);
+            Swal.fire({
+                icon: 'error',
+                title: '系统错误',
+                text: '商家数据加载异常: ' + e.message,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
         }
     }
 
@@ -472,10 +535,10 @@
                         detailsData.forEach(item => {
                             const tr2 = document.createElement('tr');
                             tr2.innerHTML = `
-                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.merchant || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
-                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.quantity || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.scan_channel || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.notes || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.merchant || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none merchant-input" readonly list="merchantsList" autocomplete="off" placeholder="点击选择商家" title="编辑模式下可选择商家"></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.quantity || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="数量" title="编辑模式下可输入数量"></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.scan_channel || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="扫描渠道" title="编辑模式下可输入扫描渠道"></td>
+                                <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="${item.notes || ''}" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="备注" title="编辑模式下可输入备注"></td>
                             `;
                             tbody2.appendChild(tr2);
                             totalQuantity += (item.quantity || 0);
@@ -484,10 +547,10 @@
                         // If no details found, add one empty row for input
                         const tr2 = document.createElement('tr');
                         tr2.innerHTML = `
-                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly list="merchantsList" autocomplete="off"></td>
-                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
-                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none merchant-input" readonly list="merchantsList" autocomplete="off" placeholder="点击选择商家" title="编辑模式下可选择商家"></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="数量" title="编辑模式下可输入数量"></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="扫描渠道" title="编辑模式下可输入扫描渠道"></td>
+                            <td class="px-3 py-1 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"><input type="text" value="" class="w-full h-full text-center bg-transparent border-none focus:outline-none" readonly placeholder="备注" title="编辑模式下可输入备注"></td>
                         `;
                         tbody2.appendChild(tr2);
                     }
@@ -804,6 +867,12 @@
         });
       }
 
+      // 检查URL参数，如果有数据则自动填充
+      checkAndPopulateFromUrlParams();
+
+      // 设置商家输入字段的增强功能
+      setupMerchantInputEnhancements();
+
       // Detail sidebar close button
       const closeDetailSidebarBtn = document.getElementById('closeDetailSidebarBtn');
       if (closeDetailSidebarBtn) {
@@ -817,215 +886,187 @@
           }
         });
       }
-
-      // Print button for detail sidebar
-      const printDetailBtn = document.getElementById('printDetailBtn');
-      if (printDetailBtn) {
-        printDetailBtn.addEventListener('click', () => {
-          window.print();
-        });
-      }
-
-      // Export to Excel button for detail sidebar
-      const exportExcelBtn = document.getElementById('exportExcelBtn');
-      if (exportExcelBtn) {
-        exportExcelBtn.addEventListener('click', () => {
-          let csv = [];
-          // Get headers for table 1
-          const table1Headers = Array.from(document.getElementById('detailTable1').querySelectorAll('thead th')).map(th => th.textContent.trim());
-          csv.push(table1Headers.join(','));
-          // Get data for table 1 (from input values)
-          document.querySelectorAll('#detailTableBody1 tr').forEach(row => {
-            const rowData = Array.from(row.querySelectorAll('input[type="text"]')).map(input => `"${input.value.trim().replace(/"/g, '""')}"`); // Escape quotes
-            csv.push(rowData.join(','));
-          });
-          // Get headers for table 2
-          const table2Headers = Array.from(document.getElementById('detailTable2').querySelectorAll('thead th')).map(th => th.textContent.trim());
-          csv.push([]); // Add an empty row for separation
-          csv.push(table2Headers.join(','));
-          // Get data for table 2 (from input values)
-          document.querySelectorAll('#detailTableBody2 tr').forEach(row => {
-            const rowData = Array.from(row.querySelectorAll('input[type="text"]')).map(input => `"${input.value.trim().replace(/"/g, '""')}"`); // Escape quotes
-            csv.push(rowData.join(','));
-          });
-
-          // Add total row for table 2
-          const totalRow = document.getElementById('detailQuantityTotal');
-          if (totalRow) {
-              const totalRowData = ["合计", `"${totalRow.textContent.trim().replace(/"/g, '""')}"`, '', '']; // Adjust colspan for total row
-              csv.push(totalRowData.join(','));
-          }
-
-          const csvString = csv.join('\n');
-          const blob = new Blob(["\ufeff", csvString], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Chinese characters
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = '发货明细.csv';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        });
-      }
-
-      // Edit button for detail sidebar
-      const editDetailBtn = document.getElementById('editDetailBtn');
-      const saveDetailBtn = document.getElementById('saveDetailBtn');
-      if (editDetailBtn) {
-          editDetailBtn.addEventListener('click', function() {
-              const isEnteringEditMode = this.textContent === '编辑';
-              console.log("Edit button clicked. Entering edit mode:", isEnteringEditMode); // Debug log
-
-              // Toggle readonly for shipment_id inputs
-              document.querySelectorAll('#detailTableBody1 .shipment-id-input').forEach(input => {
-                  input.readOnly = !isEnteringEditMode;
-                  if (isEnteringEditMode) {
-                      input.classList.add('border', 'border-blue-400'); // Add border when editable
-                  } else {
-                      input.classList.remove('border', 'border-blue-400'); // Remove border when readonly
-                  }
-                  console.log("Shipment ID input readonly set to:", input.readOnly, ", value:", input.value); // Debug log
-              });
-
-              // Table 2 editable fields (merchant, quantity, scan_channel, notes - all columns)
-              document.querySelectorAll('#detailTableBody2 tr').forEach(rowEl => {
-                  const inputs = rowEl.querySelectorAll('input[type="text"]');
-                  inputs.forEach(input => {
-                      input.readOnly = !isEnteringEditMode;
-                      if (isEnteringEditMode) {
-                          input.classList.add('border', 'border-blue-400'); // Add border when editable
-                      } else {
-                          input.classList.remove('border', 'border-blue-400'); // Remove border when readonly
-                      }
-                      console.log("Table 2 input readonly set to:", input.readOnly, ", value:", input.value); // Debug log
-                  });
-              });
-
-              this.textContent = isEnteringEditMode ? '取消' : '编辑';
-              this.classList.toggle('bg-yellow-500', !isEnteringEditMode);
-              this.classList.toggle('bg-gray-500', isEnteringEditMode);
-
-              // Enable/disable save button
-              saveDetailBtn.disabled = !isEnteringEditMode;
-              saveDetailBtn.classList.toggle('opacity-50', !isEnteringEditMode);
-              saveDetailBtn.classList.toggle('cursor-not-allowed', !isEnteringEditMode);
-          });
-      }
-
-      // Save button for detail sidebar
-      if (saveDetailBtn) {
-          saveDetailBtn.addEventListener('click', async function() {
-              const mainRowId = document.getElementById('detailSidebar').dataset.mainRowId;
-              if (!mainRowId) {
-                  Swal.fire({
-                      icon: 'error',
-                      title: '保存失败',
-                      text: '无法获取主记录ID，请刷新页面。'
-                  });
-                  return;
-              }
-              
-              // Get shipment IDs from detailTable1
-              const shipmentIdsToSave = Array.from(document.querySelectorAll('#detailTableBody1 .shipment-id-input'))
-                                              .map(input => input.value.trim())
-                                              .filter(id => id); // Filter out empty strings
-
-              // Get data from detailTable2
-              const table2Rows = document.querySelectorAll('#detailTableBody2 tr');
-              const table2DataToSave = [];
-              table2Rows.forEach(rowEl => {
-                  const inputs = rowEl.querySelectorAll('input[type="text"]');
-                  if (inputs.length === 4) { // Ensure all 4 expected inputs are present
-                      const merchant = inputs[0].value.trim();
-                      const quantity = parseInt(inputs[1].value.trim());
-                      const scan_channel = inputs[2].value.trim();
-                      const notes = inputs[3].value.trim();
-
-                      // Only add row if at least merchant or quantity is provided
-                      if (merchant || !isNaN(quantity)) {
-                          table2DataToSave.push({
-                              workflow_id: mainRowId,
-                              merchant: merchant,
-                              quantity: isNaN(quantity) ? null : quantity, // Store null if not a valid number
-                              scan_channel: scan_channel,
-                              notes: notes
-                          });
-                      }
-                  }
-              });
-
-              console.log("Saving for main row ID:", mainRowId);
-              console.log("Shipment IDs to save:", shipmentIdsToSave);
-              console.log("Table 2 Data (to save):", table2DataToSave);
-
-              try {
-                  // 1. Delete existing shipment IDs for this workflow_id
-                  const { error: deleteShipmentIdsError } = await supabase
-                      .from('temu_shipment_ids')
-                      .delete()
-                      .eq('workflow_id', mainRowId);
-
-                  if (deleteShipmentIdsError) throw deleteShipmentIdsError;
-
-                  // 2. Insert new shipment IDs (if any)
-                  if (shipmentIdsToSave.length > 0) {
-                      const shipmentIdObjects = shipmentIdsToSave.map(id => ({
-                          workflow_id: mainRowId,
-                          shipment_id_value: id
-                      }));
-                      const { error: insertShipmentIdsError } = await supabase
-                          .from('temu_shipment_ids')
-                          .insert(shipmentIdObjects);
-                      if (insertShipmentIdsError) throw insertShipmentIdsError;
-                  }
-
-                  // 3. Delete existing shipment details for this workflow_id
-                  const { error: deleteDetailsError } = await supabase
-                      .from('temu_shipment_details')
-                      .delete()
-                      .eq('workflow_id', mainRowId);
-                  
-                  if (deleteDetailsError) throw deleteDetailsError;
-
-                  // 4. Insert new shipment details (if any)
-                  if (table2DataToSave.length > 0) {
-                      const { error: insertDetailsError } = await supabase
-                          .from('temu_shipment_details')
-                          .insert(table2DataToSave);
-                      if (insertDetailsError) throw insertDetailsError;
-                  }
-
-                  Swal.fire({
-                      icon: 'success',
-                      title: '明细已保存',
-                      showConfirmButton: false,
-                      timer: 1500
-                  });
-
-                  // After saving, exit edit mode
-                  editDetailBtn.click(); // Simulate click to toggle back to '编辑'
-
-                  // Reload the main table to reflect any potential changes (e.g., if a detail row affects main table display)
-                  loadTable();
-
-              } catch (error) {
-                  console.error("Error saving details:", error.message);
-                  Swal.fire({
-                      icon: 'error',
-                      title: '保存失败',
-                      text: '保存过程中出现错误: ' + error.message
-                  });
-              }
-          });
-      }
-
-      // Initial load of table data
-      loadTable();
-      // 新增按钮
-      const addBtn = document.getElementById('addNewRowBtn');
-      addBtn.onclick = addNewRow;
     });
+
+    /**
+     * 设置商家输入字段的增强功能
+     */
+    function setupMerchantInputEnhancements() {
+        // 为所有商家输入字段添加事件监听器
+        document.addEventListener('focus', function(e) {
+            if (e.target.classList.contains('merchant-input') && !e.target.readOnly) {
+                // 当聚焦到商家输入框时，显示提示
+                e.target.style.backgroundColor = '#f0f9ff'; // 淡蓝色背景提示
+                
+                // 如果没有值，显示下拉提示
+                if (!e.target.value.trim()) {
+                    setTimeout(() => {
+                        e.target.click(); // 触发下拉菜单
+                    }, 100);
+                }
+            }
+        }, true);
+
+        document.addEventListener('blur', function(e) {
+            if (e.target.classList.contains('merchant-input')) {
+                e.target.style.backgroundColor = ''; // 恢复原背景
+            }
+        }, true);
+
+        // 为商家输入框添加输入提示
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('merchant-input') && !e.target.readOnly) {
+                const value = e.target.value.trim();
+                if (value) {
+                    // 检查输入的商家是否在列表中
+                    const datalist = document.getElementById('merchantsList');
+                    const options = Array.from(datalist.options);
+                    const isValidMerchant = options.some(option => option.value === value);
+                    
+                    if (isValidMerchant) {
+                        e.target.style.borderColor = '#10b981'; // 绿色边框表示有效
+                        e.target.title = '已选择有效商家';
+                    } else {
+                        e.target.style.borderColor = '#f59e0b'; // 橙色边框表示需要确认
+                        e.target.title = '请从下拉列表中选择商家，或确认输入的商家名称';
+                    }
+                } else {
+                    e.target.style.borderColor = '';
+                    e.target.title = '编辑模式下可选择商家';
+                }
+            }
+        }, true);
+    }
+
+    /**
+     * 检查URL参数，如果有从query.html传递的数据，则自动创建新记录
+     */
+    function checkAndPopulateFromUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const date = urlParams.get('date');
+        const trackingNumber = urlParams.get('tracking_number');
+        const orderNumber = urlParams.get('order_number');
+        const shipmentId = urlParams.get('shipment_id');
+        const totalFreight = urlParams.get('total_freight');
+        const totalWeight = urlParams.get('total_weight');
+        
+        // 如果有必要的参数，显示确认对话框
+        if (date && trackingNumber) {
+            Swal.fire({
+                title: '检测到数据录入请求',
+                html: `
+                    <div class="text-left space-y-2">
+                        <p><strong>日期:</strong> ${date}</p>
+                        <p><strong>快递单号:</strong> ${trackingNumber}</p>
+                        <p><strong>表单编号:</strong> ${orderNumber || 'N/A'}</p>
+                        <p><strong>货件ID:</strong> ${shipmentId || 'N/A'}</p>
+                        <p><strong>总运费:</strong> ${totalFreight || 'N/A'} 元</p>
+                        <p><strong>结算重量:</strong> ${totalWeight || 'N/A'} kg</p>
+                    </div>
+                    <hr class="my-4">
+                    <p class="text-center">是否创建新的工作流记录并填入以上数据？</p>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '确认创建',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    createNewRecordFromParams(date, trackingNumber, orderNumber, shipmentId);
+                }
+            });
+        }
+    }
+
+    /**
+     * 根据URL参数创建新的工作流记录
+     */
+    async function createNewRecordFromParams(date, trackingNumber, orderNumber, shipmentId) {
+        try {
+            // 准备新记录数据
+            const newRecord = {
+                cn_send_date: date,
+                main_tracking_id: trackingNumber,
+                box_code: '', // 空白，等待用户填写
+                box_count: 0,
+                inner_count: 0,
+                detail_table: '',
+                status: '途中', // 默认状态
+                us_receive_date: null,
+                us_box_count: 0,
+                us_actual_count: 0
+            };
+
+            // 插入到数据库
+            const { data, error } = await supabase
+                .from('temu_workflow')
+                .insert([newRecord])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('创建新记录失败:', error.message);
+                Swal.fire('错误', '创建新记录失败: ' + error.message, 'error');
+                return;
+            }
+
+            // 创建成功后，刷新表格
+            await loadTable();
+            
+            // 显示成功消息并打开侧边栏进行编辑
+            Swal.fire({
+                icon: 'success',
+                title: '记录创建成功！',
+                text: '请在右侧编辑面板中完善详细信息。',
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            // 自动打开侧边栏编辑新创建的记录
+            setTimeout(() => {
+                openDetailSidebarForRecord(data, shipmentId);
+            }, 500);
+
+        } catch (e) {
+            console.error('创建新记录异常:', e);
+            Swal.fire('错误', '创建新记录时发生异常: ' + e.message, 'error');
+        }
+    }
+
+    /**
+     * 打开侧边栏并填充记录数据
+     */
+    function openDetailSidebarForRecord(record, shipmentId = null) {
+        // 填充主记录信息
+        document.getElementById('detailCnSendDate').textContent = record.cn_send_date || '';
+        document.getElementById('detailMainTrackingId').textContent = record.main_tracking_id || '';
+        document.getElementById('detailBoxCode').textContent = record.box_code || '';
+        document.getElementById('detailBoxCount').textContent = record.box_count || '0';
+        document.getElementById('detailInnerCount').textContent = record.inner_count || '0';
+
+        // 存储当前记录ID以便保存时使用
+        document.getElementById('detailSidebar').setAttribute('data-main-row-id', record.id);
+
+        // 如果有货件ID，自动填充到货件ID列表
+        if (shipmentId && shipmentId !== 'N/A') {
+            const detailTable1Body = document.getElementById('detailTableBody1');
+            detailTable1Body.innerHTML = ''; // 清空现有行
+            detailTable1Body.appendChild(createDetailTable1Row(shipmentId, false)); // 创建只读行
+            updateShipmentIdCount();
+        }
+
+        // 打开侧边栏
+        const detailSidebar = document.getElementById('detailSidebar');
+        detailSidebar.classList.remove('translate-x-full');
+
+        // 自动进入编辑模式
+        setTimeout(() => {
+            const editBtn = document.getElementById('editDetailBtn');
+            if (editBtn && editBtn.textContent === '编辑') {
+                editBtn.click();
+            }
+        }, 300);
+    }
 
     // Helper function to create a new row for Detail Table 1 (Shipment IDs)
     function createDetailTable1Row(shipmentId = '', isEditable = false) {
