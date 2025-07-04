@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solid 12mm Acrylic Beads - Cara & Co.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e1e1e1;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            background: #f8f8f8;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .header-main {
+            padding: 15px 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #007bff;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 8px 40px 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cart-icon {
+            position: relative;
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .breadcrumb {
+            padding: 15px 0;
+            background: #f8f8f8;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: #007bff;
+        }
+
+        .product-section {
+            padding: 40px 0;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .product-images {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-image {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #e1e1e1;
+        }
+
+        .product-info h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .product-description {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .product-features {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .product-features h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .features-list {
+            list-style: none;
+        }
+
+        .features-list li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .features-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .color-selection {
+            margin-top: 40px;
+        }
+
+        .color-selection h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .color-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .color-table th {
+            background: #f8f8f8;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e1e1e1;
+        }
+
+        .color-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e1e1;
+            vertical-align: middle;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .color-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .price {
+            font-weight: 600;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            margin-right: 8px;
+        }
+
+        .sale-price {
+            color: #e74c3c;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .quantity-btn:hover {
+            background: #e9ecef;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .subtotal {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .cart-summary {
+            background: #f8f8f8;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 40px;
+        }
+
+        .cart-summary h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .checkout-btn:hover {
+            background: #0056b3;
+        }
+
+        .footer {
+            background: #333;
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section ul li a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section ul li a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #555;
+            padding-top: 20px;
+            text-align: center;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .color-table {
+                font-size: 14px;
+            }
+
+            .color-table th,
+            .color-table td {
+                padding: 10px 8px;
+            }
+
+            .footer-content {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div class="container">
+                <span>🎉 Summer Sale - Up to 30% Off Selected Items!</span>
+            </div>
+        </div>
+        <div class="header-main">
+            <div class="container">
+                <div class="header-content">
+                    <a href="#" class="logo">Cara & Co.</a>
+                    <nav>
+                        <ul class="nav-menu">
+                            <li><a href="#">☀️🍉Summer</a></li>
+                            <li><a href="#">✨ Featured</a></li>
+                            <li><a href="#">Beads & Supplies</a></li>
+                            <li><a href="#">Kits & Packs</a></li>
+                            <li><a href="#">Craft With Us!</a></li>
+                            <li><a href="#">Plus Program</a></li>
+                            <li><a href="#">Support</a></li>
+                        </ul>
+                    </nav>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <input type="text" placeholder="Search products...">
+                            <button class="search-btn">🔍</button>
+                        </div>
+                        <a href="#" class="cart-icon">
+                            🛒
+                            <span class="cart-count">0</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="breadcrumb">
+        <div class="container">
+            <a href="#">Home</a> / <a href="#">Beads & Supplies</a> / <a href="#">Acrylic</a> / <strong>Solid 12mm Acrylic Beads</strong>
+        </div>
+    </div>
+
+    <section class="product-section">
+        <div class="container">
+            <div class="product-grid">
+                <div class="product-images">
+                    <img src="https://via.placeholder.com/500x500/FF69B4/FFFFFF?text=12mm+Acrylic+Beads" alt="12mm Acrylic Beads" class="main-image">
+                </div>
+                <div class="product-info">
+                    <h1>Solid 12mm Acrylic Beads</h1>
+                    <div class="product-description">
+                        <p>Premium quality 12mm solid acrylic beads perfect for jewelry making, crafts, and DIY projects. These beautiful round beads feature a smooth finish and vibrant colors that won't fade over time.</p>
+                        <p>Ideal for creating necklaces, bracelets, keychains, and decorative accessories. Each bead is carefully crafted to ensure consistent size and quality.</p>
+                    </div>
+                    <div class="product-features">
+                        <h3>Product Features:</h3>
+                        <ul class="features-list">
+                            <li>Premium acrylic material</li>
+                            <li>12mm diameter - perfect size for most projects</li>
+                            <li>Smooth, polished finish</li>
+                            <li>Vibrant, fade-resistant colors</li>
+                            <li>Consistent sizing and quality</li>
+                            <li>Lightweight and durable</li>
+                            <li>Safe for children's crafts (ages 3+)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="color-selection">
+                <h2>Available Colors & Pricing</h2>
+                <table class="color-table">
+                    <thead>
+                        <tr>
+                            <th>Color</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #000; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Black</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('black', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="black-qty" value="0" min="0" onchange="updateSubtotal('black')">
+                                    <button class="quantity-btn" onclick="updateQuantity('black', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="black-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #8B4513; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Brown</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('brown', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="brown-qty" value="0" min="0" onchange="updateSubtotal('brown')">
+                                    <button class="quantity-btn" onclick="updateQuantity('brown', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="brown-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #FF69B4; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Hot Pink</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('hotpink', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="hotpink-qty" value="0" min="0" onchange="updateSubtotal('hotpink')">
+                                    <button class="quantity-btn" onclick="updateQuantity('hotpink', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="hotpink-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #FFB6C1; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Light Pink</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('lightpink', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="lightpink-qty" value="0" min="0" onchange="updateSubtotal('lightpink')">
+                                    <button class="quantity-btn" onclick="updateQuantity('lightpink', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="lightpink-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #DDA0DD; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Light Purple</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('lightpurple', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="lightpurple-qty" value="0" min="0" onchange="updateSubtotal('lightpurple')">
+                                    <button class="quantity-btn" onclick="updateQuantity('lightpurple', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="lightpurple-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #98FB98; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Mint</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('mint', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="mint-qty" value="0" min="0" onchange="updateSubtotal('mint')">
+                                    <button class="quantity-btn" onclick="updateQuantity('mint', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="mint-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #FFA500; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Orange</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('orange', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="orange-qty" value="0" min="0" onchange="updateSubtotal('orange')">
+                                    <button class="quantity-btn" onclick="updateQuantity('orange', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="orange-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #800080; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Purple</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('purple', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="purple-qty" value="0" min="0" onchange="updateSubtotal('purple')">
+                                    <button class="quantity-btn" onclick="updateQuantity('purple', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="purple-total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="color-item">
+                                    <div style="width: 60px; height: 60px; background: #FFD700; border-radius: 50%; border: 2px solid #e1e1e1;"></div>
+                                    <span class="color-name">Sunshine Yellow</span>
+                                </div>
+                            </td>
+                            <td class="price">
+                                <span class="original-price">$0.14</span>
+                                <span class="sale-price">$0.10/ea</span>
+                            </td>
+                            <td class="subtotal">$0.00</td>
+                            <td>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('yellow', -1)">-</button>
+                                    <input type="number" class="quantity-input" id="yellow-qty" value="0" min="0" onchange="updateSubtotal('yellow')">
+                                    <button class="quantity-btn" onclick="updateQuantity('yellow', 1)">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal" id="yellow-total">$0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="cart-summary">
+                <h3>Your Cart</h3>
+                <div class="cart-total">
+                    <span>Total Items: <span id="total-items">0</span></span>
+                    <span>Product Subtotal: <span id="cart-total">$0.00</span></span>
+                </div>
+                <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Taxes, Discounts and shipping calculated at checkout</p>
+                <button class="checkout-btn" onclick="checkout()">View Cart & Checkout</button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Plus Program</a></li>
+                        <li><a href="#">CaraCodes</a></li>
+                        <li><a href="#">Color & Size Guide</a></li>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Shipping</a></li>
+                        <li><a href="#">Safety Info</a></li>
+                        <li><a href="#">Returns</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Featured</h3>
+                    <ul>
+                        <li><a href="#">New Arrivals</a></li>
+                        <li><a href="#">Shop The Image</a></li>
+                        <li><a href="#">Cara & Co® Originals</a></li>
+                        <li><a href="#">On Sale</a></li>
+                        <li><a href="#">Last Chance</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Shop Supplies</h3>
+                    <ul>
+                        <li><a href="#">Silicone</a></li>
+                        <li><a href="#">Acrylic</a></li>
+                        <li><a href="#">Heishi & Polymer Clay</a></li>
+                        <li><a href="#">Glass & Hematite</a></li>
+                        <li><a href="#">Spacers</a></li>
+                        <li><a href="#">Wood</a></li>
+                        <li><a href="#">Seed Beads</a></li>
+                        <li><a href="#">Beading Supplies</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Shop Kits & Gifts</h3>
+                    <ul>
+                        <li><a href="#">Easy DIY Project Kits</a></li>
+                        <li><a href="#">Craft Kits</a></li>
+                        <li><a href="#">Curated Bead Packs</a></li>
+                        <li><a href="#">Small Business Starter Kit</a></li>
+                        <li><a href="#">Jr Entrepreneur Box</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025, Cara & Co. | Craft. Create. Inspire.</p>
+                <p>North America's Largest Silicone Bead Craft Supplier!</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * 更新指定颜色的数量
+         * @param {string} color - 颜色标识
+         * @param {number} change - 数量变化（+1或-1）
+         */
+        function updateQuantity(color, change) {
+            const qtyInput = document.getElementById(color + '-qty');
+            let currentQty = parseInt(qtyInput.value) || 0;
+            let newQty = Math.max(0, currentQty + change);
+            qtyInput.value = newQty;
+            updateSubtotal(color);
+        }
+
+        /**
+         * 更新指定颜色的小计
+         * @param {string} color - 颜色标识
+         */
+        function updateSubtotal(color) {
+            const qtyInput = document.getElementById(color + '-qty');
+            const totalElement = document.getElementById(color + '-total');
+            const qty = parseInt(qtyInput.value) || 0;
+            const price = 0.10;
+            const subtotal = (qty * price).toFixed(2);
+            totalElement.textContent = '$' + subtotal;
+            updateCartTotal();
+        }
+
+        /**
+         * 更新购物车总计
+         */
+        function updateCartTotal() {
+            const colors = ['black', 'brown', 'hotpink', 'lightpink', 'lightpurple', 'mint', 'orange', 'purple', 'yellow'];
+            let totalItems = 0;
+            let totalAmount = 0;
+
+            colors.forEach(color => {
+                const qty = parseInt(document.getElementById(color + '-qty').value) || 0;
+                totalItems += qty;
+                totalAmount += qty * 0.10;
+            });
+
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('cart-total').textContent = '$' + totalAmount.toFixed(2);
+            
+            const cartCount = document.querySelector('.cart-count');
+            cartCount.textContent = totalItems;
+            cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
+
+        /**
+         * 结账功能
+         */
+        function checkout() {
+            const totalItems = parseInt(document.getElementById('total-items').textContent);
+            if (totalItems === 0) {
+                alert('您的购物车是空的！请先添加一些商品。');
+                return;
+            }
+            
+            const cartTotal = document.getElementById('cart-total').textContent;
+            alert(`感谢您的购买！\n总计商品: ${totalItems} 件\n总金额: ${cartTotal}\n\n即将跳转到结账页面...`);
+        }
+
+        document.querySelector('.search-box input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const searchTerm = this.value.trim();
+                if (searchTerm) {
+                    alert('搜索功能: "' + searchTerm + '"');
+                }
+            }
+        });
+
+        document.querySelector('.search-btn').addEventListener('click', function() {
+            const searchTerm = document.querySelector('.search-box input').value.trim();
+            if (searchTerm) {
+                alert('搜索功能: "' + searchTerm + '"');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartTotal();
+        });
+    </script>
+</body>
+</html> 

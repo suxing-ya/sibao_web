@@ -7,9 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background-image: url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=2');
+      /* 备用背景色，如果图片加载失败会显示渐变背景 */
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* 背景图片 - 使用Flask的url_for函数 */
+      background-image: url("{{ url_for('static', filename='images/back.jpeg') }}");
       background-size: cover;
       background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
       height: 100vh;
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -19,22 +24,56 @@
       width: 100%;
       height: 100%;
     }
+    
+    /* 如果图片加载失败，显示提示信息 */
+    .bg-fallback {
+      position: relative;
+    }
+    
+    .bg-fallback::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      z-index: -1;
+    }
   </style>
 </head>
-<body>
+<body class="bg-fallback">
   <div class="overlay flex flex-col items-center justify-center min-h-screen text-white text-center p-4">
     <div class="max-w-3xl">
       <h1 class="text-4xl md:text-6xl font-extrabold mb-4" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">欢迎来到SIBAOSTUDIO</h1>
       <p class="text-xl md:text-2xl text-gray-200 mb-8" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.5);">开启我们的合作，共创美好！</p>
-      <a href="{{ url_for('user_register') }}"
-         class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out">
-        注册会员
-      </a>
-      <a href="{{ url_for('user_login') }}"
-         class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out ml-4">
-        立即登录
-      </a>
+      <div class="space-x-4">
+        <a href="{{ url_for('user_register') }}"
+           class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out">
+          注册会员
+        </a>
+        <a href="{{ url_for('user_login') }}"
+           class="inline-block bg-white text-gray-900 font-bold rounded-full py-4 px-10 text-lg shadow-xl hover:bg-gray-200 transform hover:scale-105 transition duration-300 ease-in-out">
+          立即登录
+        </a>
+      </div>
     </div>
   </div>
+  
+  <!-- 添加一个小提示，如果没有背景图片 -->
+  <script>
+    // 检查背景图片是否加载成功
+    window.addEventListener('load', function() {
+      const testImg = new Image();
+      testImg.onload = function() {
+        console.log('背景图片加载成功');
+      };
+      testImg.onerror = function() {
+        console.log('背景图片加载失败，使用备用背景');
+        // 可以在这里添加额外的处理逻辑
+      };
+      testImg.src = "{{ url_for('static', filename='images/back.jpeg') }}";
+    });
+  </script>
 </body>
 </html>  

@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Removed Supabase dependency, now using Flask API -->
   <style>
     .form-input-group {
       position: relative;
@@ -47,16 +47,6 @@
     </div>
 
     <form id="registrationForm" class="space-y-6" novalidate>
-        <!-- Username -->
-        <div class="relative w-full">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <i class="fa fa-user"></i>
-            </span>
-            <input type="text" id="username" name="username" placeholder="用户名" required
-                   class="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
-        </div>
-
         <!-- Email -->
         <div class="relative w-full">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
@@ -64,6 +54,20 @@
             </span>
             <input type="email" id="email" name="email" placeholder="电子邮箱" required
                    class="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
+        </div>
+
+        <!-- Verification Code -->
+        <div class="relative w-full">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <i class="fa fa-shield"></i>
+            </span>
+            <input type="text" id="verification-code" name="verification-code" placeholder="邮箱验证码" required
+                   class="w-full pl-14 pr-32 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="button" id="send-code-btn" 
+                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                发送验证码
+            </button>
             <p class="error-message mt-1 text-xs text-red-500 hidden"></p>
         </div>
 
@@ -122,20 +126,23 @@
   </div>
 
 <script>
-    // Initialize Supabase client
-    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // 使用腾讯云MySQL API替代Supabase
+        const API_BASE_URL = window.location.origin;
 
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('registrationForm');
-        const usernameInput = document.getElementById('username');
         const emailInput = document.getElementById('email');
+        const verificationCodeInput = document.getElementById('verification-code');
+        const sendCodeBtn = document.getElementById('send-code-btn');
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirm-password');
         const strengthBar = document.getElementById('password-strength');
         const togglePasswordVisibility = document.getElementById('togglePasswordVisibility');
         const toggleConfirmPasswordVisibility = document.getElementById('toggleConfirmPasswordVisibility');
+        
+        // 验证码相关变量
+        let codeSent = false;
+        let codeTimer = null;
 
         // Password visibility toggles
         if (togglePasswordVisibility) {
@@ -244,22 +251,97 @@
             return true;
         };
 
+        // 发送验证码功能
+        const sendVerificationCode = async () => {
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                showError(emailInput, '请先输入邮箱地址');
+                return;
+            }
+            
+            if (!checkEmail(emailInput)) {
+                return;
+            }
+            
+            sendCodeBtn.disabled = true;
+            sendCodeBtn.textContent = '发送中...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/send-verification-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    codeSent = true;
+                    showSuccess(emailInput);
+                    
+                    // 开始60秒倒计时
+                    let countdown = 60;
+                    sendCodeBtn.textContent = `${countdown}秒后重试`;
+                    
+                    codeTimer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            sendCodeBtn.textContent = `${countdown}秒后重试`;
+                        } else {
+                            clearInterval(codeTimer);
+                            sendCodeBtn.disabled = false;
+                            sendCodeBtn.textContent = '重新发送';
+                        }
+                    }, 1000);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '验证码已发送',
+                        text: '请查收您的邮箱并输入验证码',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '发送验证码';
+                    showError(emailInput, result.message || '发送验证码失败');
+                }
+            } catch (error) {
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = '发送验证码';
+                showError(emailInput, '网络错误，请重试');
+                console.error('发送验证码错误:', error);
+            }
+        };
+
+        // 发送验证码按钮点击事件
+        sendCodeBtn.addEventListener('click', sendVerificationCode);
+
         passwordInput.addEventListener('input', () => checkPasswordStrength(passwordInput));
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Form submission initiated.'); // 步骤1: 确认提交事件被触发
+            console.log('Form submission initiated.');
 
-            const username = form.elements['username'];
             const email = form.elements['email'];
+            const verificationCode = form.elements['verification-code'];
             const password = form.elements['password'];
             const confirmPassword = form.elements['confirm-password'];
             const terms = form.elements['terms'];
 
-            const isRequiredValid = checkRequired([username, email, password, confirmPassword]);
+            const isRequiredValid = checkRequired([email, verificationCode, password, confirmPassword]);
             const isEmailValid = checkEmail(email);
             const isPasswordStrong = checkPasswordStrength(password);
             const doPasswordsMatch = checkPasswordMatch(password, confirmPassword);
+            
+            // 验证码验证
+            if (!codeSent) {
+                showError(verificationCodeInput, '请先发送验证码');
+                return;
+            }
             
             const termsError = document.getElementById('terms-error');
             if (!terms.checked) {
@@ -269,17 +351,26 @@
             }
 
             if (isRequiredValid && isEmailValid && isPasswordStrong && doPasswordsMatch && terms.checked) {
-                console.log('Client-side validation passed. Attempting Supabase signup.'); // 步骤2: 确认前端验证通过
+                console.log('Client-side validation passed. Attempting registration via API.');
                 try {
-                    const { data, error } = await supabase.auth.signUp({
-                        email: email.value,
-                        password: password.value,
+                    const response = await fetch(`${API_BASE_URL}/api/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: email.value,
+                            verification_code: verificationCode.value,
+                            password: password.value
+                        })
                     });
 
-                    if (error) {
-                        console.error('Supabase signup error:', error.message); // 步骤3: 打印Supabase错误信息
-                        let errorMessage = error.message;
-                        if (error.message.includes('users with that email address are already registered')) {
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        console.error('Registration API error:', result.message);
+                        let errorMessage = result.message || '注册失败';
+                        if (result.message && result.message.includes('already exists')) {
                             errorMessage = '该电子邮箱已被注册，请尝试登录或使用其他邮箱。';
                         }
 
@@ -289,36 +380,35 @@
                             text: errorMessage
                         });
                     } else {
-                        console.log('Signup successful according to Supabase. Displaying success alert.', data); // 步骤4: 打印成功信息
-                        // Optionally, redirect after successful signup
+                        console.log('Signup successful according to API. Displaying success alert.', result);
                         Swal.fire({
                             icon: 'success',
                             title: '注册成功!',
-                            text: '您已成功注册。请检查您的邮箱进行验证。' + (data.user ? ` 用户ID: ${data.user.id}` : ''),
-                            showConfirmButton: false,
-                            timer: 3000
+                            html: '您已成功注册。<br/><strong>注意：</strong>新注册用户暂无系统权限，<br/>请联系管理员分配权限后使用。<br/><br/>即将跳转到登录页面。',
+                            showConfirmButton: true,
+                            confirmButtonText: '前往登录',
+                            timer: 5000
                         }).then(() => {
-                            // window.location.href = '{{ url_for('user_login') }}'; // Redirect to login page
+                            window.location.href = '/login'; // 跳转到登录页面
                         });
                     }
                 } catch (e) {
-                    console.error('An unexpected error occurred during signup:', e.message); // 步骤5: 捕获其他异常
+                    console.error('An unexpected error occurred during signup:', e.message);
                     Swal.fire({
                         icon: 'error',
                         title: '注册异常',
-                        text: '发生未知错误，请重试或联系管理员。'
+                        text: '网络错误或服务器异常，请重试或联系管理员。'
                     });
                 }
             }
         });
 
         // Initial validation on page load if fields are pre-filled (e.g., from browser autofill)
-        if (usernameInput.value) checkRequired([usernameInput]);
         if (emailInput.value) checkEmail(emailInput);
 
         // Live validation on input
-        usernameInput.addEventListener('input', () => checkRequired([usernameInput]));
         emailInput.addEventListener('input', () => checkEmail(emailInput));
+        verificationCodeInput.addEventListener('input', () => checkRequired([verificationCodeInput]));
         passwordInput.addEventListener('input', () => {
             checkPasswordStrength(passwordInput);
             checkPasswordMatch(passwordInput, confirmPasswordInput);

@@ -18,7 +18,7 @@
     <aside class="w-full md:w-1/4 p-6 bg-white shadow-md rounded-lg md:mr-4 mb-6 md:mb-0">
       <div class="text-center">
         <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ user_profile.username }}</h2>
-        <p class="text-gray-600 text-sm mb-4">{{ user_profile.email }}</p>
+        <!-- <p class="text-gray-600 text-sm mb-4">{{ user_profile.email }}</p> -->
         <hr class="border-gray-200 mb-4">
       </div>
 
@@ -59,11 +59,13 @@
           </div>
           <div class="mt-auto">
             {% set has_permission = true %}
+            {#
             {% if func.get('required_permission') %}
               {% if user_profile.role != 'admin' and func.required_permission not in user_profile.permissions %}
                 {% set has_permission = false %}
               {% endif %}
             {% endif %}
+            #}
 
             {% if not has_permission %}
             <button class="block w-full py-2 px-4 bg-gray-300 text-gray-700 font-semibold rounded-lg text-center cursor-not-allowed" disabled>

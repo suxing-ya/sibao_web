@@ -1,0 +1,16 @@
+INSERT INTO shipping_costs (date, express_number, form_number, weight, merchant_name, cost, destination, status, created_at) VALUES
+('2025-06-20', 'SF1234567890', 'FORM001', 2.5, 'MerchantA', 15.80, 'Beijing', 'Shipped', NOW()),
+('2025-06-20', 'YTO9876543210', 'FORM002', 1.8, 'MerchantB', 12.50, 'Shanghai', 'Shipped', NOW()),
+('2025-06-21', 'ZTO1111222233', 'FORM003', 3.2, 'MerchantC', 18.90, 'Shenzhen', 'Delivering', NOW()),
+('2025-06-21', 'STO4444555566', 'FORM004', 0.9, 'MerchantA', 8.50, 'Guangzhou', 'Shipped', NOW()),
+('2025-06-22', 'EMS7777888899', 'FORM005', 4.1, 'MerchantD', 25.60, 'Hangzhou', 'Delivered', NOW()),
+('2025-06-22', 'JD0000111122', 'FORM006', 2.3, 'MerchantB', 16.20, 'Nanjing', 'Delivering', NOW()),
+('2025-06-23', 'SF3333444455', 'FORM007', 1.5, 'MerchantE', 11.80, 'Suzhou', 'Shipped', NOW()),
+('2025-06-23', 'YTO6666777788', 'FORM008', 3.8, 'MerchantC', 22.40, 'Wuhan', 'Delivering', NOW()),
+('2025-06-24', 'ZTO9999000011', 'FORM009', 2.7, 'MerchantA', 17.30, 'Chengdu', 'Delivered', NOW()),
+('2025-06-24', 'STO2222333344', 'FORM010', 1.2, 'MerchantF', 9.90, 'Chongqing', 'Shipped', NOW()),
+('2025-06-25', 'EMS5555666677', 'FORM011', 4.5, 'MerchantD', 28.70, 'Xian', 'Delivering', NOW()),
+('2025-06-25', 'JD8888999900', 'FORM012', 3.0, 'MerchantB', 19.50, 'Tianjin', 'Shipped', NOW()),
+('2025-06-26', 'SF1111000099', 'FORM013', 2.1, 'MerchantG', 14.60, 'Qingdao', 'Delivered', NOW()),
+('2025-06-26', 'YTO4444333322', 'FORM014', 1.6, 'MerchantE', 12.20, 'Dalian', 'Delivering', NOW()),
+('2025-06-26', 'ZTO7777666655', 'FORM015', 3.4, 'MerchantC', 20.80, 'Shenyang', 'Shipped', NOW());

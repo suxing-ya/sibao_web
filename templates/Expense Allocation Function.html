@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   
   <script>
     tailwind.config = {
@@ -29,39 +29,74 @@
     }
   </script>
   <script>
-    let supabase; // Declare supabase as a global variable
+    // 现在使用MySQL API，不再需要Supabase
   </script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
     :root {
-      --primary: #3b82f6;
-      --primary-dark: #2563eb;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --primary-color: #3B82F6;
+      --secondary-color: #10B981;
+      --accent-color: #F59E0B;
+      --danger-color: #EF4444;
+      --warning-color: #F59E0B;
+      --success-color: #10B981;
+      --info-color: #3B82F6;
+      --light-color: #F8FAFC;
+      --dark-color: #1E293B;
+      --neutral-dark: #374151;
+      --border-color: #E5E7EB;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
-    
-    /* 隐藏数字输入框的上下箭头 */
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
-    
-    .primary-btn {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    }
-    
-    .primary-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+
+    .font-inter { font-family: 'Inter', sans-serif; }
+    .bg-primary { background-color: var(--primary-color); }
+    .bg-secondary { background-color: var(--secondary-color); }
+    .bg-accent { background-color: var(--accent-color); }
+    .bg-danger { background-color: var(--danger-color); }
+    .bg-warning { background-color: var(--warning-color); }
+    .bg-success { background-color: var(--success-color); }
+    .bg-info { background-color: var(--info-color); }
+    .bg-light { background-color: var(--light-color); }
+    .bg-dark { background-color: var(--dark-color); }
+    .text-primary { color: var(--primary-color); }
+    .text-secondary { color: var(--secondary-color); }
+    .text-accent { color: var(--accent-color); }
+    .text-danger { color: var(--danger-color); }
+    .text-warning { color: var(--warning-color); }
+    .text-success { color: var(--success-color); }
+    .text-info { color: var(--info-color); }
+    .text-light { color: var(--light-color); }
+    .text-dark { color: var(--dark-color); }
+    .text-neutral-dark { color: var(--neutral-dark); }
+    .border-color { border-color: var(--border-color); }
+    .shadow-sm { box-shadow: var(--shadow-sm); }
+    .shadow-md { box-shadow: var(--shadow-md); }
+    .shadow-lg { box-shadow: var(--shadow-lg); }
+    .shadow-xl { box-shadow: var(--shadow-xl); }
+
+    .gradient-primary { background: var(--gradient-primary); }
+    .gradient-secondary { background: var(--gradient-secondary); }
+    .gradient-success { background: var(--gradient-success); }
+
+    /* 添加更多自定义样式 */
+    .btn-hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
     }
   </style>
 </head>
 <body class="bg-gray-50 font-inter text-neutral-dark">
+
+  <!-- 引入用户状态栏 -->
+  {% include 'user_status_bar.html' %}
+
   <div class="container mx-auto px-4 py-8 max-w-full xl:max-w-7xl">
     <!-- 顶部操作栏 -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -228,7 +263,7 @@
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-4 text-white">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium opacity-90">今日运费</span>
-                <span id="totalFreight" class="text-2xl font-bold">¥893.04</span>
+                <span id="totalFreight" class="text-2xl font-bold">¥0.00</span>
               </div>
             </div>
             
@@ -236,17 +271,17 @@
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
                 <div class="text-xs text-gray-500 mb-1">货物实重</div>
-                <div id="actualWeightSum" class="font-semibold text-gray-800">8.220 kg</div>
+                <div id="actualWeightSum" class="font-semibold text-gray-800">0.000 kg</div>
               </div>
               
               <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
                 <div class="text-xs text-gray-500 mb-1">纸箱重量</div>
-                <div id="boxWeight" class="font-semibold text-gray-800">1.357 kg</div>
+                <div id="boxWeight" class="font-semibold text-gray-800">0.000 kg</div>
               </div>
               
               <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
                 <div class="text-xs text-gray-500 mb-1">抛出重量</div>
-                <div id="throwOut" class="font-semibold text-gray-800">3.556 kg</div>
+                <div id="throwOut" class="font-semibold text-gray-800">0.000 kg</div>
               </div>
               
               <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
@@ -257,7 +292,7 @@
             
             <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div class="text-xs text-gray-500 mb-1">商户数量</div>
-              <div id="merchantCount" class="font-semibold text-gray-800 text-center">4</div>
+              <div id="merchantCount" class="font-semibold text-gray-800 text-center">0</div>
             </div>
           </div>
         </div>
@@ -288,10 +323,10 @@
               <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">件数</th>
               <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">货物实重 (kg)</th>
               <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">比例</th>
-              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占纸箱 (kg)</th>
-              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占抛出 (kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占纸箱(kg)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">占抛出(kg)</th>
               <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">结算重量 (kg)</th>
-              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">合计金额 (元)</th>
+              <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center border-r border-gray-200">合计金额 (¥)</th>
               <th class="px-3 py-2 font-semibold text-gray-700 text-sm text-center">操作</th>
             </tr>
           </thead>
@@ -299,101 +334,23 @@
             <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
               <td class="px-3 py-2 text-center text-sm">1</td>
               <td class="px-3 py-2 text-center" style="min-width: 140px;">
-                <input type="text" value="思宝" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
+                <input type="text" value="" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList" placeholder="请选择商户">
               </td>
               <td class="px-3 py-2 text-center">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
+                <input type="number" value="" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1" placeholder="0">
               </td>
               <td class="px-3 py-2 text-center">
-                <input type="number" value="3.110" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
+                <input type="number" value="" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001" placeholder="0.000">
               </td>
-              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">37.84%</td>
+              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">0.00%</td>
               <td class="px-3 py-2 text-center">
-                <input type="number" value="0.513" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="1.345" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">4.969</td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">337.88</td>
-              <td class="px-3 py-2 text-center">
-                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
-                  <i class="fa fa-trash text-sm"></i>
-                </button>
-              </td>
-            </tr>
-            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
-              <td class="px-3 py-2 text-center text-sm">2</td>
-              <td class="px-3 py-2 text-center" style="min-width: 140px;">
-                <input type="text" value="珠子(尤)" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
+                <input type="number" value="0" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
               <td class="px-3 py-2 text-center">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
+                <input type="number" value="0" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
               </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.480" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">5.84%</td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.079" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.208" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">0.767</td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">52.15</td>
-              <td class="px-3 py-2 text-center">
-                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
-                  <i class="fa fa-trash text-sm"></i>
-                </button>
-              </td>
-            </tr>
-            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
-              <td class="px-3 py-2 text-center text-sm">3</td>
-              <td class="px-3 py-2 text-center" style="min-width: 140px;">
-                <input type="text" value="女士裤子" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="1.070" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">13.02%</td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.177" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.463" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">1.710</td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">116.25</td>
-              <td class="px-3 py-2 text-center">
-                <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
-                  <i class="fa fa-trash text-sm"></i>
-                </button>
-              </td>
-            </tr>
-            <tr class="border-b border-gray-200 hover:bg-blue-50/50 transition-colors">
-              <td class="px-3 py-2 text-center text-sm">4</td>
-              <td class="px-3 py-2 text-center" style="min-width: 140px;">
-                <input type="text" value="CJ垚垚" class="merchant-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" list="merchantList">
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="1" class="pieces-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="1">
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="3.560" class="weight-input w-full px-2 py-1 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:border-blue-400 transition-colors text-sm" step="0.001">
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-medium text-blue-600 rate-cell">43.31%</td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="0.588" class="box-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center">
-                <input type="number" value="1.540" class="throw-input w-full px-2 py-1 text-center border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm" step="0.001" readonly>
-              </td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">5.688</td>
-              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">386.77</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-gray-800 settle-weight-cell">0.000</td>
+              <td class="px-3 py-2 text-center text-sm font-semibold text-green-600 amount-cell">0.00</td>
               <td class="px-3 py-2 text-center">
                 <button class="delete-row text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors">
                   <i class="fa fa-trash text-sm"></i>
@@ -402,13 +359,13 @@
             </tr>
             <tr class="bg-gradient-to-r from-blue-50 to-indigo-50 font-semibold border-t-2 border-blue-200">
               <td colspan="2" class="px-3 py-2 text-center text-sm font-bold text-gray-700">合计:</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-pieces">4</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-actual-weight">8.220</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600">100.00%</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-box-weight">1.357</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-throw">3.556</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-indigo-600 total-settle-weight">13.133</td>
-              <td class="px-3 py-2 text-center text-sm font-bold text-green-600 total-amount">893.04</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-pieces">0</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-actual-weight">0.000</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600">0.00%</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-box-weight">0.000</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-throw">0.000</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-indigo-600 total-settle-weight">0.000</td>
+              <td class="px-3 py-2 text-center text-sm font-bold text-green-600 total-amount">0.00</td>
               <td class="px-3 py-2 text-center"></td>
             </tr>
           </tbody>
@@ -433,12 +390,9 @@
     
     // 初始化页面
     document.addEventListener('DOMContentLoaded', function() {
-      // Replace with your Supabase project URL and anon key
-      const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co'; 
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // 现在使用 MySQL API，不需要Supabase 配置
 
-      // 设置日期输入框的默认值和监听器
+      // 设置日期输入框的默认值和监听
       const dateInput = document.getElementById('dateInput');
       const today = new Date();
       const year = today.getFullYear();
@@ -448,17 +402,31 @@
 
       // 监听日期变化，当日期改变时，重新生成表单编号
       dateInput.addEventListener('change', function() {
-          loadDataFromUrlOrReset(true); // 传递 true 表示强制重置并生成新编号
+          loadDataFromUrlOrReset(true); // 传入true 表示强制重置并生成新编号
       });
 
       // 初始化图表
       initChart();
       
       // 绑定事件
+      console.log('🔵 开始绑定按钮事件...');
+      
+      const saveBtn = document.getElementById('saveDataBtn');
+      console.log('🔵 保存按钮元素:', saveBtn);
+      
       document.getElementById('addRowBtn').addEventListener('click', () => addNewRow());
       document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
       document.getElementById('calculateBtn').addEventListener('click', resetForm);
-      document.getElementById('saveDataBtn').addEventListener('click', saveData);
+      
+      if (saveBtn) {
+        saveBtn.addEventListener('click', function(e) {
+          console.log('🔵 保存按钮被点击!', e);
+          saveData();
+        });
+        console.log('🔵 保存按钮事件绑定成功');
+      } else {
+        console.error('❌ 找不到保存按钮元素!');
+      }
 
       document.getElementById('freightUnitPrice').addEventListener('change', calculateAll);
       document.getElementById('totalSettleWeight').addEventListener('change', calculateAll);
@@ -467,7 +435,10 @@
       // 为输入框绑定事件
       bindInputEvents();
       
-      // 初始化时加载数据（根据URL参数或重置表单）
+      // 确保合计行存在
+      ensureTotalRowExists();
+      
+      // 初始时加载数据（根据URL参数或重置表单）
       loadDataFromUrlOrReset();
 
       // 加载商户列表
@@ -538,32 +509,45 @@
     // 绑定输入框事件
     function bindInputEvents() {
       // 为所有输入框绑定事件
-      document.querySelectorAll('.weight-input, .box-input, .throw-input, .pieces-input').forEach(input => {
-        input.addEventListener('change', calculateAll);
+      document.querySelectorAll('.weight-input, .pieces-input').forEach(input => {
+        input.removeEventListener('input', calculateAll); // 移除旧的事件监听
+        input.removeEventListener('change', calculateAll);
+        input.addEventListener('input', calculateAll); // 添加input事件（实时更新）
+        input.addEventListener('change', calculateAll); // 添加change事件（失去焦点时更新）
       });
       
       // 为删除按钮绑定事件
       document.querySelectorAll('.delete-row').forEach(button => {
-        button.addEventListener('click', function() {
-          const row = this.closest('tr');
-          if (document.querySelectorAll('#detailTable tr').length > 2) { // 至少保留合计行
-            row.remove();
-            renumberRows();
-            calculateAll();
-          } else {
-            alert('至少保留一条商户记录');
-          }
-        });
+        button.removeEventListener('click', deleteRowHandler);
+        button.addEventListener('click', deleteRowHandler);
       });
 
       // 为商户输入框绑定change事件
       document.querySelectorAll('.merchant-input').forEach(input => {
-        input.addEventListener('change', function() {
-          // 如果 value 是 "name (code)"，只保留 name
-          const match = this.value.match(/^(.+?) \([^)]+\)$/);
-          if (match) this.value = match[1];
-        });
+        input.removeEventListener('change', merchantInputHandler);
+        input.addEventListener('change', merchantInputHandler);
       });
+    }
+    
+    // 删除行处理函数
+    function deleteRowHandler() {
+      const row = this.closest('tr');
+      const dataRows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
+      if (dataRows.length > 1) { // 至少保留一条商户记录
+        row.remove();
+        renumberRows();
+        calculateAll();
+        ensureTotalRowExists(); // 确保合计行仍然存在
+      } else {
+        alert('至少保留一条商户记录');
+      }
+    }
+    
+    // 商户输入框处理函数
+    function merchantInputHandler() {
+      // 如果 value 是"name (code)"，只保留 name
+      const match = this.value.match(/^(.+?) \([^)]+\)$/);
+      if (match) this.value = match[1];
     }
     
     // 添加新行
@@ -599,9 +583,14 @@
         </td>
       `;
       
-      // 在合计行前插入新行
-      const totalRow = tbody.querySelector('.bg-gradient-to-r from-blue-50 to-indigo-50');
-      tbody.insertBefore(newRow, totalRow);
+      // 确保合计行存在，然后在合计行前插入新行
+      ensureTotalRowExists();
+      const totalRow = tbody.querySelector('tr.bg-gradient-to-r.from-blue-50.to-indigo-50');
+      if (totalRow) {
+        tbody.insertBefore(newRow, totalRow);
+      } else {
+        tbody.appendChild(newRow);
+      }
       
       // 重新编号
       renumberRows();
@@ -617,9 +606,9 @@
       }
     }
     
-    // 重新编号行
+    // 重新编号
     function renumberRows() {
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
       rows.forEach((row, index) => {
         row.querySelector('td:first-child').textContent = index + 1;
       });
@@ -629,63 +618,209 @@
     }
     
     /**
-     * 保存当前数据到 Supabase 数据库。
+     * 确保合计行存在于表格底部
+     */
+    function ensureTotalRowExists() {
+      const tbody = document.getElementById('detailTable');
+      const totalRow = tbody.querySelector('tr.bg-gradient-to-r.from-blue-50.to-indigo-50');
+      
+      if (!totalRow) {
+        // 如果合计行不存在，则创建
+        const newTotalRow = document.createElement('tr');
+        newTotalRow.className = 'bg-gradient-to-r from-blue-50 to-indigo-50 font-semibold border-t-2 border-blue-200';
+        newTotalRow.innerHTML = `
+          <td colspan="2" class="px-3 py-2 text-center text-sm font-bold text-gray-700">合计:</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-pieces">0</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-actual-weight">0.000</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-blue-600">100.00%</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-box-weight">0.000</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-blue-600 total-throw">0.000</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-indigo-600 total-settle-weight">0.000</td>
+          <td class="px-3 py-2 text-center text-sm font-bold text-green-600 total-amount">0.00</td>
+          <td class="px-3 py-2 text-center"></td>
+        `;
+        tbody.appendChild(newTotalRow);
+      }
+    }
+    
+    /**
+     * 获取所有商户的总实际重量
+     * @returns {number} 总实际重量
+     */
+    function getTotalActualWeight() {
+        let total = 0;
+        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
+        rows.forEach(row => {
+            const weightInput = row.querySelector('.weight-input');
+            if (weightInput) {
+                total += parseFloat(weightInput.value) || 0;
+            }
+        });
+        return total;
+    }
+
+    /**
+     * 重置表单输入框（除了订单号）
+     */
+    function resetFormInputs() {
+        document.getElementById('dateInput').value = '';
+        document.getElementById('freightUnitPrice').value = '';
+        document.getElementById('totalSettleWeight').value = '';
+        document.getElementById('actualWeightWithBox').value = '';
+        document.getElementById('trackingNumber').value = '';
+        document.getElementById('shipmentId').value = '';
+        document.getElementById('boxCountInput').value = '';
+    }
+
+    /**
+     * 保存当前数据到腾讯云 MySQL 数据库的 shipping_costs 表
      * @async
      * @returns {Promise<void>}
      */
     async function saveData() {
+        console.log('🔵 saveData函数被调用');
+        
+        // 显示一个立即的提示，确认函数被调用
+        Swal.fire({
+            title: '正在保存...',
+            text: '请稍候',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         const date = document.getElementById('dateInput').value;
         if (!date) {
             Swal.fire('错误', '请先选择一个日期！', 'error');
             return;
         }
 
+        const orderNumber = document.getElementById('orderNumber').value;
+        if (!orderNumber) {
+            Swal.fire('错误', '请先生成表单编号！', 'error');
+            return;
+        }
+
+        // 检查是否是编辑模式（URL中有order_number参数）
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEditMode = urlParams.get('order_number') && urlParams.get('order_number') === orderNumber;
+
         const dataToSave = {
-            date: date, // Add date to the object for Supabase
+            date: date,
+            order_number: orderNumber,
             freight_unit_price: parseFloat(document.getElementById('freightUnitPrice').value) || 0,
             total_settle_weight: parseFloat(document.getElementById('totalSettleWeight').value) || 0,
             actual_weight_with_box: parseFloat(document.getElementById('actualWeightWithBox').value) || 0,
-            tracking_number: document.getElementById('trackingNumber').value,
-            shipment_id: document.getElementById('shipmentId').value,
-            order_number: document.getElementById('orderNumber').value,
+            tracking_number: document.getElementById('trackingNumber').value || '',
+            shipment_id: document.getElementById('shipmentId').value || '',
             box_count: parseInt(document.getElementById('boxCountInput').value, 10) || 0,
             merchants: []
         };
 
-        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
+        const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
         rows.forEach(row => {
-            dataToSave.merchants.push({
-                name: row.querySelector('.merchant-input').value,
-                weight: parseFloat(row.querySelector('.weight-input').value) || 0,
-                pieces: parseInt(row.querySelector('.pieces-input').value, 10) || 0
-            });
+            const merchantNameInput = row.querySelector('.merchant-input');
+            const weightInput = row.querySelector('.weight-input');
+            const piecesInput = row.querySelector('.pieces-input');
+            
+            if (merchantNameInput && weightInput && piecesInput) {
+                const merchantName = merchantNameInput.value;
+                const weight = parseFloat(weightInput.value) || 0;
+                const pieces = parseInt(piecesInput.value, 10) || 0;
+                
+                // 获取计算好的字段
+                const settleWeight = parseFloat(row.querySelector('.settle-weight-cell')?.textContent) || 0;
+                const amount = parseFloat(row.querySelector('.amount-cell')?.textContent) || 0;
+                
+                // 计算比例
+                const totalActualWeight = getTotalActualWeight();
+                const weightRatio = totalActualWeight > 0 ? (weight / totalActualWeight * 100) : 0;
+                
+                // 获取占纸箱和占抛出重量
+                const boxWeightCell = row.querySelector('td:nth-child(6)');
+                const throwWeightCell = row.querySelector('td:nth-child(7)');
+                const boxWeight = boxWeightCell ? parseFloat(boxWeightCell.textContent) || 0 : 0;
+                const throwWeight = throwWeightCell ? parseFloat(throwWeightCell.textContent) || 0 : 0;
+                
+                if (merchantName && weight > 0) {
+                    dataToSave.merchants.push({
+                        merchant_name: merchantName,
+                        pieces: pieces,
+                        weight: weight,
+                        weight_ratio: weightRatio,
+                        box_weight: boxWeight,
+                        throw_weight: throwWeight,
+                        settle_weight: settleWeight,
+                        amount: amount
+                    });
+                }
+            }
         });
 
-        try {
-            const { data, error } = await supabase
-                .from('shipping_costs')
-                .upsert([dataToSave], { onConflict: 'order_number' }); // Upsert based on order_number
+        console.log('📊 准备保存的数据:', dataToSave);
+        console.log('📝 编辑模式:', isEditMode);
 
-            if (error) {
-                console.error('保存数据到 Supabase 失败:', error.message);
-                Swal.fire('错误', '保存数据失败: ' + error.message, 'error');
+        try {
+            let response;
+            if (isEditMode) {
+                // 编辑模式：使用 PUT 方法更新数据
+                console.log('🔄 使用编辑模式更新数据');
+                response = await fetch(`/api/shipping_allocations/${encodeURIComponent(orderNumber)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToSave)
+                });
             } else {
-                Swal.fire({
-                    icon: 'success',
-                    title: '保存成功',
-                    text: `日期 ${date} 的数据已成功保存到云端。`,
-                    timer: 2000,
-                    showConfirmButton: false
+                // 新增模式：使用 POST 方法创建数据
+                console.log('➕ 使用新增模式创建数据');
+                response = await fetch('/api/shipping_allocations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToSave)
                 });
             }
-        } catch (e) {
-            console.error('保存数据时发生异常:', e.message);
-            Swal.fire('错误', '保存数据时发生异常: ' + e.message, 'error');
+
+            console.log('🌐 API响应状态:', response.status);
+
+            if (response.status === 401) {
+                Swal.fire('认证失败', '您的会话已过期，请重新登录', 'error');
+                return;
+            }
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('📄 API响应结果:', result);
+
+            if (result.success) {
+                const action = isEditMode ? '更新' : '保存';
+                Swal.fire('成功!', `分摊数据已成功${action}到数据库`, 'success');
+                
+                // 如果是新增模式，更新URL参数以切换到编辑模式
+                if (!isEditMode) {
+                    const newUrl = `${window.location.pathname}?order_number=${encodeURIComponent(orderNumber)}`;
+                    window.history.replaceState({}, '', newUrl);
+                }
+            } else {
+                throw new Error(result.message || `${isEditMode ? '更新' : '保存'}失败`);
+            }
+        } catch (error) {
+            console.error('💥 保存/更新失败:', error);
+            Swal.fire('错误', `数据${isEditMode ? '更新' : '保存'}失败: ` + error.message, 'error');
         }
     }
 
     /**
-     * 从 URL 获取 order_number 参数，并根据该参数加载数据，或重置表单。
+     * 从URL获取 order_number 参数，并根据该参数加载数据，或重置表单
      * @async
      * @returns {Promise<void>}
      */
@@ -694,29 +829,42 @@
         const orderNumberFromUrl = urlParams.get('order_number');
         
         const tbody = document.getElementById('detailTable');
-        const rows = tbody.querySelectorAll('tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
-        rows.forEach(row => row.remove()); // Clear existing rows
+        
+        // 确保合计行存在
+        ensureTotalRowExists();
+        
+        // 清除现有的数据行（保留合计行）
+        const rows = tbody.querySelectorAll('tr:not(.bg-gradient-to-r)');
+        rows.forEach(row => row.remove());
 
         const dateInput = document.getElementById('dateInput');
         const orderNumberInput = document.getElementById('orderNumber');
 
         if (orderNumberFromUrl && !forceNewOrderNumber) {
-            // 如果 URL 中有 order_number 且不是强制生成新编号，则尝试从 Supabase 加载数据
+            // 如果 URL 中有 order_number 且不是强制生成新编号，则尝试从MySQL数据库加载数据
             try {
-                const { data, error } = await supabase
-                    .from('shipping_costs')
-                    .select('*')
-                    .eq('order_number', orderNumberFromUrl)
-                    .single();
-
-                if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-                    console.error('从 Supabase 加载数据失败:', error.message);
-                    Swal.fire('错误', '加载数据失败: ' + error.message, 'error');
+                // 首先尝试从新的API获取数据
+                const response = await fetch(`/api/shipping_allocations/${encodeURIComponent(orderNumberFromUrl)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('从数据库加载数据失败', result.message);
+                    Swal.fire('错误', '加载数据失败: ' + result.message, 'error');
                     resetFormInputs(); // Reset inputs if loading fails
                     return;
                 }
 
+                const data = result.data;
+
                 if (data) {
+                    console.log('🔍 从API加载的数据:', data);
+                    console.log('📅 日期数据:', data.date);
+                    
+                    // 填充表单数据 - API已经返回YYYY-MM-DD格式的日期
                     dateInput.value = data.date || '';
                     document.getElementById('freightUnitPrice').value = data.freight_unit_price || '';
                     document.getElementById('totalSettleWeight').value = data.total_settle_weight || '';
@@ -725,38 +873,64 @@
                     document.getElementById('shipmentId').value = data.shipment_id || '';
                     orderNumberInput.value = data.order_number || '';
                     document.getElementById('boxCountInput').value = data.box_count || '';
+                    
+                    console.log('💾 日期输入框设置为:', dateInput.value);
 
-                    if (data.merchants && data.merchants.length > 0) {
-                        data.merchants.forEach(m => addNewRow(m.name, m.weight, m.pieces || '1', false));
+                    // 处理商户数据
+                    const merchantsData = data.merchants || [];
+
+                    if (merchantsData && merchantsData.length > 0) {
+                        merchantsData.forEach(m => {
+                            const merchantName = m.merchant_name || '';
+                            const weight = m.actual_weight || 0;
+                            const pieces = m.pieces || 1;
+                            
+                            addNewRow(merchantName, weight, pieces, false);
+                            
+                            // 恢复计算好的数值
+                            const lastRow = document.querySelector('#detailTable tr:last-of-type:not(.bg-gradient-to-r)');
+                            if (lastRow) {
+                                // 设置结算重量
+                                if (m.settle_weight) {
+                                    lastRow.querySelector('.settle-weight-cell').textContent = parseFloat(m.settle_weight).toFixed(3);
+                                }
+                                // 设置金额
+                                if (m.amount) {
+                                    lastRow.querySelector('.amount-cell').textContent = parseFloat(m.amount).toFixed(2);
+                                }
+                            }
+                        });
                     } else {
                         addNewRow('', '0', '1', false); // 即使有数据，如果merchants为空，也添加一行
                     }
                 } else {
-                    // 找不到对应 order_number 的数据，则生成新的表单编号
+                    // 找不到对应order_number的数据，则生成新的表单编号
                     Swal.fire('提示', `未找到表单编号为 ${orderNumberFromUrl} 的数据，将为您生成新的表单编号。`, 'info');
                     await generateNewOrderNumber(); // 生成新编号
                     addNewRow('', '0', '1', false);
                 }
             } catch (e) {
-                console.error('加载数据时发生异常:', e.message);
-                Swal.fire('错误', '加载数据时发生异常: ' + e.message, 'error');
+                console.error('加载数据时发生异常', e.message);
+                Swal.fire('错误', '加载数据时发生异常 ' + e.message, 'error');
                 // 如果加载失败，也尝试生成新的表单编号
                 await generateNewOrderNumber(); // 生成新编号
                 addNewRow('', '0', '1', false);
             } finally {
+                ensureTotalRowExists(); // 确保合计行存在
                 calculateAll(); // 始终在加载或重置后重新计算
             }
         } else {
-            // 如果 URL 中没有 order_number，或者强制生成新编号，则重置为初始状态并生成新编号
+            // 如果 URL中没有order_number，或者强制生成新编号，则重置为初始状态并生成新编号
             await generateNewOrderNumber(); // 生成新编号
-            resetFormInputs(); // 重置除 orderNumber 以外的其他输入框
+            resetFormInputs(); // 重置orderNumber以外的其他输入框
             addNewRow('', '0', '1', false);
+            ensureTotalRowExists(); // 确保合计行存在
             calculateAll();
         }
     }
 
     /**
-     * 生成新的表单编号并填充到输入框。
+     * 生成新的表单编号并填充到输入框
      * @async
      * @returns {Promise<void>}
      */
@@ -774,23 +948,32 @@
             selectedDate = dateInput.value; // 更新selectedDate
         }
 
-        const datePrefix = selectedDate.replace(/-/g, ''); // 格式化为 YYYYMMDD
+        const datePrefix = selectedDate.replace(/-/g, ''); // 格式化为YYYYMMDD
 
         try {
-            const { data: latestOrder, error } = await supabase
-                .from('shipping_costs')
-                .select('order_number')
-                .like('order_number', `${datePrefix}%`) // 查询以当前日期为前缀的订单号
-                .order('order_number', { ascending: false }) // 按订单号降序排列，获取最大的
-                .limit(1);
-
+            const response = await fetch(`/api/shipping_allocations?order_number_prefix=${datePrefix}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
             let nextSequence = 1;
-            if (latestOrder && latestOrder.length > 0 && latestOrder[0].order_number) {
-                const lastOrderNumber = latestOrder[0].order_number;
-                const lastSequenceStr = lastOrderNumber.slice(-3); // 获取最后三位序列号
-                const lastSequence = parseInt(lastSequenceStr, 10);
-                if (!isNaN(lastSequence)) {
-                    nextSequence = lastSequence + 1;
+            if (result.success && result.data && result.data.length > 0) {
+                // 找到以当前日期为前缀的最大订单号
+                const ordersWithPrefix = result.data.filter(item => 
+                    item.order_number && item.order_number.startsWith(datePrefix)
+                );
+                
+                if (ordersWithPrefix.length > 0) {
+                    // 按订单号降序排序，获取最大的
+                    ordersWithPrefix.sort((a, b) => b.order_number.localeCompare(a.order_number));
+                    const lastOrderNumber = ordersWithPrefix[0].order_number;
+                    const lastSequenceStr = lastOrderNumber.slice(-3); // 获取最后三位序列号
+                    const lastSequence = parseInt(lastSequenceStr, 10);
+                    if (!isNaN(lastSequence)) {
+                        nextSequence = lastSequence + 1;
+                    }
                 }
             }
 
@@ -804,7 +987,7 @@
     }
 
     /**
-     * 重置表单顶部输入框的值。
+     * 重置表单顶部输入框的值
      */
     function resetFormInputs() {
                   document.getElementById('freightUnitPrice').value = '';
@@ -813,11 +996,11 @@
         document.getElementById('trackingNumber').value = '';
         document.getElementById('shipmentId').value = '';
         document.getElementById('boxCountInput').value = '';
-        // document.getElementById('orderNumber').value = ''; // 表单编号由 generateNewOrderNumber 管理
+        // document.getElementById('orderNumber').value = ''; // 表单编号由generateNewOrderNumber管理
     }
 
     /**
-     * 清除所有商户参数以供重新输入，并显示一个美观的确认对话框。
+     * 清除所有商户参数以供重新输入，并显示一个美观的确认对话框
      */
     function resetForm() {
       // 播放提示音
@@ -826,7 +1009,7 @@
       // 使用SweetAlert2显示自定义对话框
       Swal.fire({
         title: '确认操作',
-        text: "您确定要清除所有商户数据吗？此操作将清空所有输入。",
+        text: "您确定要清除所有商户数据吗？此操作将清空所有输入框，",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#165DFF', // 匹配主题主色
@@ -840,7 +1023,7 @@
         }
       }).then((result) => {
         if (result.isConfirmed) {
-          const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
+          const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
           
           rows.forEach(row => {
             row.querySelector('.merchant-input').value = '';
@@ -848,13 +1031,16 @@
             row.querySelector('.pieces-input').value = '0';
           });
 
-          // 清除顶部的可手动输入项
+          // 清除顶部的可手动输入框
           document.getElementById('trackingNumber').value = '';
           document.getElementById('shipmentId').value = '';
           document.getElementById('totalSettleWeight').value = '';
           document.getElementById('actualWeightWithBox').value = '';
           document.getElementById('orderNumber').value = '';
           document.getElementById('boxCountInput').value = '';
+          
+          // 确保合计行存在
+          ensureTotalRowExists();
           
           // 重新计算以更新所有字段为0或默认状态
           calculateAll();
@@ -863,7 +1049,7 @@
           Swal.fire({
             icon: 'success',
             title: '已清除',
-            text: '所有数据已被清空，您可以重新输入了。',
+            text: '所有数据已被清空，您可以重新输入了',
             timer: 1500,
             showConfirmButton: false,
             customClass: {
@@ -875,24 +1061,28 @@
     }
     
     /**
-     * 计算所有数据。
-     * 此函数重新计算页面上的所有财务数据。
-     * 它支持手动输入总结算重量和"实重+纸箱"重量。
-     * 如果手动输入"实重+纸箱"，它将按比例分配纸箱重量到每一行。
-     * 如果手动输入总结算重量，它会根据每个商户的结算重量按比例重新分配总费用。
-     * @param {Event} [event] - 触发计算的事件对象。
+     * 计算所有数据
+     * 此函数重新计算页面上的所有财务数据
+     * 它支持手动输入总结算重量和"实重+纸箱"重量
+     * 如果手动输入"实重+纸箱"，它将按比例分配纸箱重量到每一行
+     * 如果手动输入总结算重量，它会根据每个商户的结算重量按比例重新分配总费用
+     * @param {Event} [event] - 触发计算的事件对象
      */
     function calculateAll(event) {
       const trigger = event ? event.target : null;
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
       const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
       
       // 1. Calculate totalActualWeight (sum from table)
       let totalActualWeight = 0;
       let totalPieces = 0;
       rows.forEach(row => {
-          totalActualWeight += parseFloat(row.querySelector('.weight-input').value) || 0;
-          totalPieces += parseInt(row.querySelector('.pieces-input').value, 10) || 0;
+          const weightInput = row.querySelector('.weight-input');
+          const piecesInput = row.querySelector('.pieces-input');
+          if (weightInput && piecesInput) {
+            totalActualWeight += parseFloat(weightInput.value) || 0;
+            totalPieces += parseInt(piecesInput.value, 10) || 0;
+          }
       });
 
       // 2. Calculate and distribute Box Weight based on the "Actual Weight + Box" input.
@@ -902,9 +1092,12 @@
       if (totalBoxWeight < 0) totalBoxWeight = 0;
 
       rows.forEach(row => {
-          const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
+          const actualWeight = parseFloat(row.querySelector('.weight-input')?.value) || 0;
           const proportion = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * totalBoxWeight : (rows.length > 0 ? totalBoxWeight / rows.length : 0);
-          row.querySelector('.box-input').value = proportion.toFixed(3);
+          const boxInput = row.querySelector('.box-input');
+          if (boxInput) {
+            boxInput.value = proportion.toFixed(3);
+          }
       });
       
       const actualWeightWithBox = totalActualWeight + totalBoxWeight;
@@ -926,9 +1119,12 @@
       if (totalThrow < 0) totalThrow = 0;
 
       rows.forEach(row => {
-          const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
+          const actualWeight = parseFloat(row.querySelector('.weight-input')?.value) || 0;
           const proportion = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * totalThrow : (rows.length > 0 ? totalThrow / rows.length : 0);
-          row.querySelector('.throw-input').value = proportion.toFixed(3);
+          const throwInput = row.querySelector('.throw-input');
+          if (throwInput) {
+            throwInput.value = proportion.toFixed(3);
+          }
       });
       
       // 5. Final pass to calculate row values and totals.
@@ -936,9 +1132,9 @@
       let totalSettleWeightFromTable = 0;
       
       rows.forEach(row => {
-        const actualWeight = parseFloat(row.querySelector('.weight-input').value) || 0;
-        const boxWeight = parseFloat(row.querySelector('.box-input').value) || 0;
-        const throwWeight = parseFloat(row.querySelector('.throw-input').value) || 0;
+        const actualWeight = parseFloat(row.querySelector('.weight-input')?.value) || 0;
+        const boxWeight = parseFloat(row.querySelector('.box-input')?.value) || 0;
+        const throwWeight = parseFloat(row.querySelector('.throw-input')?.value) || 0;
         const settleWeight = actualWeight + boxWeight + throwWeight;
         
         rowData.push({ row, actualWeight, settleWeight });
@@ -951,7 +1147,10 @@
         const { row, actualWeight, settleWeight } = data;
         
         const rate = totalActualWeight > 0 ? (actualWeight / totalActualWeight) * 100 : 0;
-        row.querySelector('.rate-cell').textContent = rate.toFixed(2) + '%';
+        const rateCell = row.querySelector('.rate-cell');
+        if (rateCell) {
+          rateCell.textContent = rate.toFixed(2) + '%';
+        }
         
         let amount = 0;
         if (totalSettleWeightFromTable > 0) {
@@ -960,27 +1159,55 @@
           amount = totalAmount / rowData.length;
         }
         
-        row.querySelector('.settle-weight-cell').textContent = settleWeight.toFixed(3);
-        row.querySelector('.amount-cell').textContent = amount.toFixed(2);
+        const settleWeightCell = row.querySelector('.settle-weight-cell');
+        const amountCell = row.querySelector('.amount-cell');
+        if (settleWeightCell) {
+          settleWeightCell.textContent = settleWeight.toFixed(3);
+        }
+        if (amountCell) {
+          amountCell.textContent = amount.toFixed(2);
+        }
       });
 
-      const finalTotalAmountFromTable = rowData.reduce((sum, data) => sum + parseFloat(data.row.querySelector('.amount-cell').textContent), 0);
+      const finalTotalAmountFromTable = rowData.reduce((sum, data) => {
+        const amountCell = data.row.querySelector('.amount-cell');
+        return sum + (amountCell ? parseFloat(amountCell.textContent) : 0);
+      }, 0);
 
-      document.querySelector('.total-actual-weight').textContent = totalActualWeight.toFixed(3);
-      document.querySelector('.total-pieces').textContent = totalPieces;
-      document.querySelector('.total-box-weight').textContent = totalBoxWeight.toFixed(3);
-      document.querySelector('.total-throw').textContent = totalThrow.toFixed(3);
-      document.querySelector('.total-settle-weight').textContent = totalSettleWeightFromTable.toFixed(3);
-      document.querySelector('.total-amount').textContent = finalTotalAmountFromTable.toFixed(2);
+      // 更新合计行
+      const totalActualWeightElement = document.querySelector('.total-actual-weight');
+      const totalPiecesElement = document.querySelector('.total-pieces');
+      const totalBoxWeightElement = document.querySelector('.total-box-weight');
+      const totalThrowElement = document.querySelector('.total-throw');
+      const totalSettleWeightElement = document.querySelector('.total-settle-weight');
+      const totalAmountElement = document.querySelector('.total-amount');
       
-      document.getElementById('actualWeightSum').textContent = totalActualWeight.toFixed(3) + ' kg';
-      document.getElementById('boxWeight').textContent = totalBoxWeight.toFixed(3) + ' kg';
-      document.getElementById('throwOut').textContent = totalThrow.toFixed(3) + ' kg';
-      document.getElementById('totalFreight').textContent = '¥' + finalTotalAmountFromTable.toFixed(2);
+      if (totalActualWeightElement) totalActualWeightElement.textContent = totalActualWeight.toFixed(3);
+      if (totalPiecesElement) totalPiecesElement.textContent = totalPieces;
+      if (totalBoxWeightElement) totalBoxWeightElement.textContent = totalBoxWeight.toFixed(3);
+      if (totalThrowElement) totalThrowElement.textContent = totalThrow.toFixed(3);
+      if (totalSettleWeightElement) totalSettleWeightElement.textContent = totalSettleWeightFromTable.toFixed(3);
+      if (totalAmountElement) totalAmountElement.textContent = finalTotalAmountFromTable.toFixed(2);
+      
+      // 更新汇总信息
+      const actualWeightSumElement = document.getElementById('actualWeightSum');
+      const boxWeightElement = document.getElementById('boxWeight');
+      const throwOutElement = document.getElementById('throwOut');
+      const totalFreightElement = document.getElementById('totalFreight');
+      
+      if (actualWeightSumElement) actualWeightSumElement.textContent = totalActualWeight.toFixed(3) + ' kg';
+      if (boxWeightElement) boxWeightElement.textContent = totalBoxWeight.toFixed(3) + ' kg';
+      if (throwOutElement) throwOutElement.textContent = totalThrow.toFixed(3) + ' kg';
+      if (totalFreightElement) totalFreightElement.textContent = '¥' + finalTotalAmountFromTable.toFixed(2);
       
       // 更新箱数显示
       const boxCountValue = parseInt(document.getElementById('boxCountInput').value, 10) || 0;
-      document.getElementById('boxCount').textContent = boxCountValue;
+      const boxCountElement = document.getElementById('boxCount');
+      if (boxCountElement) boxCountElement.textContent = boxCountValue;
+      
+      // 更新商户数量
+      const merchantCountElement = document.getElementById('merchantCount');
+      if (merchantCountElement) merchantCountElement.textContent = rows.length;
       
       updateChart();
     }
@@ -1002,7 +1229,7 @@
       // 创建工作簿
       const wb = XLSX.utils.book_new();
       
-      // 创建工作表数据
+      // 创建工作表数组
       const ws_data = [];
       
       // 添加头部信息
@@ -1029,14 +1256,14 @@
       // 添加表头
       ws_data.push([
         '序号', '商户', '件数', '货物实重(kg)', '比例(%)', '占纸箱(kg)', 
-        '占抛出(kg)', '结算重量(kg)', '运费单价(元/kg)', '合计金额(元)'
+        '占抛出(kg)', '结算重量(kg)', '运费单价(¥/kg)', '合计金额(¥)'
       ]);
       
       // 获取运费单价
       const freightUnitPrice = parseFloat(document.getElementById('freightUnitPrice').value) || 0;
       
       // 添加表格数据
-      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r from-blue-50 to-indigo-50)');
+      const rows = document.querySelectorAll('#detailTable tr:not(.bg-gradient-to-r)');
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         const rowData = [];
@@ -1089,8 +1316,8 @@
     }
 
     /**
-     * 从 Supabase 获取商户列表并填充到 datalist 中。
-     * 体验与工作流页面一致：下拉显示"编号 - 名称"，选中后只填名称。
+     * 从腾讯云 MySQL 数据库获取商户列表并填充到datalist中
+     * 体验与工作流页面一致：下拉显示"编号 - 名称"，选中后只填名称
      * @async
      * @returns {Promise<void>}
      */
@@ -1099,26 +1326,31 @@
         if (!merchantListDatalist) return;
 
         try {
-            const { data, error } = await supabase
-                .from('merchants')
-                .select('merchant_id_code, merchant_name')
-                .order('merchant_id_code', { ascending: true });
-
-            if (error) {
-                console.error('获取商户列表失败:', error.message);
+            const response = await fetch('/api/merchants');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                console.error('获取商户列表失败:', result.message);
                 return;
             }
 
+            const merchants = result.data || [];
             merchantListDatalist.innerHTML = '';
 
-            data.forEach(merchant => {
+            merchants.forEach(merchant => {
                 const option = document.createElement('option');
                 option.value = merchant.merchant_name; // 选中后只填名称
                 option.textContent = `${merchant.merchant_id_code} - ${merchant.merchant_name}`; // 下拉显示编号-名称
                 merchantListDatalist.appendChild(option);
             });
+            
+            console.log(`成功加载 ${merchants.length} 个商户到下拉列表`);
         } catch (e) {
-            console.error('填充商户列表时发生异常:', e.message);
+            console.error('填充商户列表时发生异常', e.message);
         }
     }
 
@@ -1127,7 +1359,7 @@
         // 初始化商户数据列表
         populateMerchantDatalist();
         
-        // 添加箱数输入框的事件监听器
+        // 添加箱数输入框的事件监听
         const boxCountInput = document.getElementById('boxCountInput');
         if (boxCountInput) {
             boxCountInput.addEventListener('input', function() {

@@ -1,0 +1,12 @@
+Flask==2.3.2
+Werkzeug==2.3.7
+psycopg2-binary==2.9.7
+python-dotenv==1.0.0
+Flask-CORS==4.0.0
+gunicorn==20.1.0
+
+# 如果继续使用Supabase认证服务（推荐）
+supabase==1.0.4
+
+# 数据迁移工具依赖
+# 以上包已包含所需依赖 

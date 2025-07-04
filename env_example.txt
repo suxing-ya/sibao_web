@@ -1,0 +1,11 @@
+# Supabase配置
+SUPABASE_URL=你的Supabase项目URL
+SUPABASE_SERVICE_ROLE_KEY=你的Supabase服务角色密钥
+
+# Flask配置
+FLASK_SECRET_KEY=你的Flask密钥（建议使用随机字符串）
+
+# 示例：
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# FLASK_SECRET_KEY=your-super-secret-key-here-make-it-random-and-long 

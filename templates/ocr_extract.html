@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片文字提取 - OCR识别</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* 现代化OCR页面样式 */
+    
+    /* 全局容器优化 */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+    
+    /* 主内容区域 */
+    .main-content {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem 0;
+    }
+    
+    /* 内部白色容器 */
+    .inner-container {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+    
+    /* 工作区网格 */
+    .work-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    /* 卡片样式 */
+    .work-card {
+      background: #fafafa;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .work-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+    }
+    
+    .card-icon {
+      font-size: 1.5rem;
+      color: #667eea;
+    }
+    
+    /* 图片上传区域 */
+    .upload-area {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: white;
+    }
+    
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f8fafc;
+    }
+    
+    .upload-area.dragover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    
+    /* 图片预览 */
+    .image-preview {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin: 1rem 0;
+    }
+    
+    /* 按钮美化 */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* 结果文本区域 */
+    .result-text {
+      width: 100%;
+      min-height: 300px;
+      padding: 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      background: white;
+      resize: vertical;
+    }
+    
+    /* 加载状态 */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* 语言选择 */
+    .language-select {
+      padding: 8px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      font-size: 0.9rem;
+      margin-left: 1rem;
+    }
+    
+    .language-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    /* 页面标题 */
+    .page-title {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .title-main {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+    
+    .title-sub {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .work-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .container {
+        padding: 0 1rem;
+      }
+      
+      .inner-container {
+        padding: 1rem;
+      }
+      
+      .title-main {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 状态栏 -->
+  {% include 'user_status_bar.html' %}
+  
+  <div class="main-content">
+    <div class="container">
+      <!-- 页面标题 -->
+      <div class="page-title">
+        <h1 class="title-main">
+          <i class="fa fa-image"></i>
+          图片文字提取
+        </h1>
+        <p class="title-sub">使用OCR技术从图片中识别和提取文字内容</p>
+      </div>
+      
+      <div class="inner-container">
+        <div class="work-grid">
+          <!-- 图片上传区域 -->
+          <div class="work-card">
+            <div class="card-header">
+              <i class="fa fa-cloud-upload card-icon"></i>
+              <h3 class="card-title">图片上传</h3>
+              <select class="language-select" id="languageSelect">
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+                <option value="auto">自动检测</option>
+              </select>
+            </div>
+            
+            <div class="upload-area" id="uploadArea">
+              <div id="uploadPrompt">
+                <i class="fa fa-cloud-upload" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                <p style="color: #6b7280; font-size: 1.1rem; margin-bottom: 0.5rem;">
+                  点击或拖拽图片到这里上传
+                </p>
+                <p style="color: #9ca3af; font-size: 0.9rem;">
+                  支持 JPG、PNG、GIF、BMP 格式
+                </p>
+              </div>
+              
+              <div id="imagePreview" style="display: none;">
+                <img id="previewImage" class="image-preview" alt="预览图片">
+                <div style="margin-top: 1rem;">
+                  <button class="btn btn-primary" id="extractBtn">
+                    <i class="fa fa-search"></i>
+                    开始提取文字
+                  </button>
+                  <button class="btn btn-secondary" id="resetBtn">
+                    <i class="fa fa-refresh"></i>
+                    重新选择
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            
+            <!-- 加载状态 -->
+            <div class="loading" id="loadingArea">
+              <div class="spinner"></div>
+              <p style="color: #6b7280;">正在识别图片中的文字，请稍候...</p>
+            </div>
+          </div>
+          
+          <!-- 识别结果区域 -->
+          <div class="work-card">
+            <div class="card-header">
+              <i class="fa fa-file-text-o card-icon"></i>
+              <h3 class="card-title">识别结果</h3>
+            </div>
+            
+            <textarea 
+              id="resultText" 
+              class="result-text" 
+              placeholder="识别的文字内容将显示在这里..."
+              readonly
+            ></textarea>
+            
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+              <button class="btn btn-success" id="copyBtn" disabled>
+                <i class="fa fa-copy"></i>
+                复制文本
+              </button>
+              <button class="btn btn-primary" id="downloadBtn" disabled>
+                <i class="fa fa-download"></i>
+                下载文本
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // OCR图片文字提取功能
+    class OCRExtractor {
+      constructor() {
+        this.initializeElements();
+        this.bindEvents();
+      }
+      
+      initializeElements() {
+        this.uploadArea = document.getElementById('uploadArea');
+        this.fileInput = document.getElementById('fileInput');
+        this.uploadPrompt = document.getElementById('uploadPrompt');
+        this.imagePreview = document.getElementById('imagePreview');
+        this.previewImage = document.getElementById('previewImage');
+        this.extractBtn = document.getElementById('extractBtn');
+        this.resetBtn = document.getElementById('resetBtn');
+        this.loadingArea = document.getElementById('loadingArea');
+        this.resultText = document.getElementById('resultText');
+        this.copyBtn = document.getElementById('copyBtn');
+        this.downloadBtn = document.getElementById('downloadBtn');
+        this.languageSelect = document.getElementById('languageSelect');
+      }
+      
+      bindEvents() {
+        // 上传区域点击事件
+        this.uploadArea.addEventListener('click', () => {
+          if (this.uploadPrompt.style.display !== 'none') {
+            this.fileInput.click();
+          }
+        });
+        
+        // 文件选择事件
+        this.fileInput.addEventListener('change', (e) => {
+          this.handleFileSelect(e.target.files[0]);
+        });
+        
+        // 拖拽事件
+        this.uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          this.uploadArea.classList.add('dragover');
+        });
+        
+        this.uploadArea.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          this.uploadArea.classList.remove('dragover');
+        });
+        
+        this.uploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          this.uploadArea.classList.remove('dragover');
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            this.handleFileSelect(files[0]);
+          }
+        });
+        
+        // 按钮事件
+        this.extractBtn.addEventListener('click', () => this.extractText());
+        this.resetBtn.addEventListener('click', () => this.resetUpload());
+        this.copyBtn.addEventListener('click', () => this.copyText());
+        this.downloadBtn.addEventListener('click', () => this.downloadText());
+      }
+      
+      handleFileSelect(file) {
+        if (!file) return;
+        
+        // 验证文件类型
+        if (!file.type.startsWith('image/')) {
+          Swal.fire({
+            icon: 'error',
+            title: '文件类型错误',
+            text: '请选择图片文件（JPG、PNG、GIF、BMP）'
+          });
+          return;
+        }
+        
+        // 验证文件大小（限制10MB）
+        if (file.size > 10 * 1024 * 1024) {
+          Swal.fire({
+            icon: 'error',
+            title: '文件过大',
+            text: '图片文件大小不能超过10MB'
+          });
+          return;
+        }
+        
+        // 显示预览
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.previewImage.src = e.target.result;
+          this.uploadPrompt.style.display = 'none';
+          this.imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        
+        this.selectedFile = file;
+      }
+      
+      async extractText() {
+        if (!this.selectedFile) {
+          Swal.fire({
+            icon: 'warning',
+            title: '请先选择图片',
+            text: '请上传要识别的图片文件'
+          });
+          return;
+        }
+        
+        // 显示加载状态
+        this.loadingArea.style.display = 'block';
+        this.extractBtn.disabled = true;
+        
+        try {
+          const formData = new FormData();
+          formData.append('image', this.selectedFile);
+          formData.append('language', this.languageSelect.value);
+          
+          const response = await fetch('/api/ocr/extract', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            this.resultText.value = result.text || '未识别到文字内容';
+            this.copyBtn.disabled = false;
+            this.downloadBtn.disabled = false;
+            
+            if (result.text) {
+              Swal.fire({
+                icon: 'success',
+                title: '识别成功',
+                text: `成功识别 ${result.text.length} 个字符`,
+                timer: 2000,
+                showConfirmButton: false
+              });
+            } else {
+              Swal.fire({
+                icon: 'info',
+                title: '识别完成',
+                text: '图片中未识别到文字内容',
+                timer: 2000,
+                showConfirmButton: false
+              });
+            }
+          } else {
+            throw new Error(result.error || '识别失败');
+          }
+        } catch (error) {
+          console.error('OCR识别错误:', error);
+          Swal.fire({
+            icon: 'error',
+            title: '识别失败',
+            text: error.message || '图片文字识别失败，请重试'
+          });
+        } finally {
+          this.loadingArea.style.display = 'none';
+          this.extractBtn.disabled = false;
+        }
+      }
+      
+      resetUpload() {
+        this.selectedFile = null;
+        this.fileInput.value = '';
+        this.uploadPrompt.style.display = 'block';
+        this.imagePreview.style.display = 'none';
+        this.resultText.value = '';
+        this.copyBtn.disabled = true;
+        this.downloadBtn.disabled = true;
+        this.loadingArea.style.display = 'none';
+      }
+      
+      async copyText() {
+        if (!this.resultText.value) return;
+        
+        try {
+          await navigator.clipboard.writeText(this.resultText.value);
+          Swal.fire({
+            icon: 'success',
+            title: '复制成功',
+            text: '文本已复制到剪贴板',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          // 兼容性处理
+          this.resultText.select();
+          document.execCommand('copy');
+          Swal.fire({
+            icon: 'success',
+            title: '复制成功',
+            text: '文本已复制到剪贴板',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        }
+      }
+      
+      downloadText() {
+        if (!this.resultText.value) return;
+        
+        const blob = new Blob([this.resultText.value], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `OCR识别结果_${new Date().toLocaleDateString()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        Swal.fire({
+          icon: 'success',
+          title: '下载成功',
+          text: '文本文件已开始下载',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    }
+    
+    // 初始化OCR提取器
+    document.addEventListener('DOMContentLoaded', () => {
+      new OCRExtractor();
+    });
+  </script>
+</body>
+</html> 

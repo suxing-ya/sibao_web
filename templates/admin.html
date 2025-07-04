@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- 引入 Supabase JS 库 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     /* Custom styles if needed, Tailwind handles most */
     .table-container {
@@ -49,7 +47,7 @@
 
       <div id="accountManagementContent">
         <div class="flex justify-between items-center mb-4">
-          <button class="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition duration-300 text-sm">
+          <button id="addNewSubAccountBtn" class="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition duration-300 text-sm">
             + 新增子账号
           </button>
           <div class="relative flex items-center">
@@ -65,14 +63,17 @@
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   账号名
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <!-- <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   账号类型
-              </th>
+              </th> -->
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 角色
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   账号备注
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  权限
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 操作
@@ -81,11 +82,37 @@
           </thead>
           <tbody id="membersTableBody" class="bg-white divide-y divide-gray-200">
             {% for member in members %}
-              <tr data-id="{{ member.id }}" data-permissions="{{ member.permissions | safe }}">
+              <tr data-id="{{ member.id }}" data-permissions='{{ member.permissions | safe }}'>
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.username }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td>
+                <!-- <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td> -->
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.role }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ member.notes or '' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  {% if member.role != 'admin' %}
+                  <span class="permissions-display" data-permissions='{{ member.permissions | safe }}'>
+                    {% set permission_names = {
+                      'y2cost_html': '成本核算',
+                      'temu_y2gzl_html': '货物工作流', 
+                      'expense_allocation_function': '运费分摊核算',
+                      'barcode_generator_html': '条形码生成',
+                      'statistical_function': '统计功能',
+                      'query_function': '查询功能',
+                      'product_extractor_html': 'Temu产品提取器'
+                    } %}
+                    {% if member.permissions_array and member.permissions_array|length > 0 %}
+                      {% set display_names = [] %}
+                      {% for perm in member.permissions_array %}
+                        {% set _ = display_names.append(permission_names.get(perm, perm)) %}
+                      {% endfor %}
+                      <span class="text-green-600">{{ display_names | join(', ') }}</span>
+                    {% else %}
+                      <span class="text-gray-400">无权限</span>
+                    {% endif %}
+                  </span>
+                  {% else %}
+                  <span class="text-gray-500">管理员</span>
+                  {% endif %}
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {% if member.role != 'admin' %}
                   <button class="text-indigo-600 hover:text-indigo-900 mr-4 edit-btn" data-id="{{ member.id }}">编辑</button>
@@ -138,11 +165,6 @@
   </div>
 
   <script>
-    // Supabase配置
-    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     document.addEventListener('DOMContentLoaded', () => {
         const logoutBtn = document.getElementById('logoutBtn');
         const accountManagementTab = document.getElementById('accountManagementTab');
@@ -210,9 +232,24 @@
         // Initialize active tab (e.g., account management)
         switchTab('accountManagementTab');
 
+        // 权限显示映射
+        const PERMISSION_NAMES = {
+            'y2cost_html': '成本核算',
+            'temu_y2gzl_html': '货物工作流',
+            'expense_allocation_function': '运费分摊核算',
+            'barcode_generator_html': '条形码生成',
+            'statistical_function': '统计功能',
+            'query_function': '查询功能',
+            'product_extractor_html': 'Temu产品提取器'
+        };
+
+        // 权限显示已由服务器端渲染，无需客户端解析
+        console.log('权限显示已由服务器端处理完成');
+
         // Logout Logic
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
+                console.log("登出按钮被点击");
                 try {
                     // 发送请求到后端登出路由
                     const response = await fetch('/logout', {
@@ -249,15 +286,40 @@
         editBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const memberId = e.target.dataset.id;
-                // Implement edit logic, e.g., open a modal with user data
-                showAlert('info', '编辑用户', `编辑用户ID: ${memberId} - 功能待实现`);
+                const memberRow = e.target.closest('tr');
+                
+                // 获取当前用户数据
+                const username = memberRow.querySelector('td:nth-child(1)').textContent;
+                const notes = memberRow.querySelector('td:nth-child(3)').textContent; // 备注列
+                
+                // 打开编辑抽屉
+                showEditUserDrawer(memberId, username, notes);
             });
         });
 
         deleteBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const memberId = e.target.dataset.id;
-                const result = await showAlert('question', '确认删除？', '此操作不可撤销！');
+                const memberRow = e.target.closest('tr');
+                const username = memberRow.querySelector('td:nth-child(1)').textContent;
+                
+                // 显示详细的删除确认对话框
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: '确认删除用户',
+                    html: `您确定要删除用户 <strong>"${username}"</strong> 吗？<br><br><span style="color: #dc2626;">此操作不可撤销！</span>`,
+                    showCancelButton: true,
+                    confirmButtonText: '确定删除',
+                    cancelButtonText: '取消',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    reverseButtons: true,
+                    focusCancel: true,
+                    customClass: {
+                        popup: 'rounded-xl shadow-lg'
+                    }
+                });
+                
                 if (result.isConfirmed) {
                     try {
                         const response = await fetch(`/api/member/${memberId}`, {
@@ -265,7 +327,7 @@
                         });
                         const data = await response.json();
                         if (response.ok) {
-                            showAlert('success', '删除成功', data.message || '用户已删除！', 1500);
+                            showAlert('success', '删除成功', `用户 "${username}" 已成功删除！`, 1500);
                             e.target.closest('tr').remove(); // Remove row from UI
                         } else {
                             showAlert('error', '删除失败', data.message || '删除用户失败。');
@@ -282,7 +344,35 @@
             btn.addEventListener('click', async (e) => {
                 const memberId = e.target.dataset.id;
                 const memberRow = e.target.closest('tr');
-                const permissionsData = memberRow.dataset.permissions ? JSON.parse(memberRow.dataset.permissions) : [];
+                
+                console.log('权限管理点击 - 用户ID:', memberId, '行数据ID:', memberRow.dataset.id);
+                
+                // 安全解析权限数据
+                let permissionsData = [];
+                try {
+                    const rawPermissions = memberRow.dataset.permissions;
+                    console.log('原始权限数据:', rawPermissions);
+                    
+                    if (rawPermissions) {
+                        if (typeof rawPermissions === 'string') {
+                            if (rawPermissions.trim().startsWith('[')) {
+                                permissionsData = JSON.parse(rawPermissions);
+                            } else if (rawPermissions.trim() !== '' && rawPermissions.trim() !== '[]') {
+                                permissionsData = rawPermissions.split(',').map(p => p.trim()).filter(p => p);
+                            }
+                        } else if (Array.isArray(rawPermissions)) {
+                            permissionsData = rawPermissions;
+                        }
+                    }
+                    
+                    console.log('解析后权限数据:', permissionsData);
+                } catch (error) {
+                    console.error('解析权限数据失败:', error);
+                    console.log('原始权限数据:', memberRow.dataset.permissions);
+                    // 如果权限数据格式错误，默认为空数组
+                    permissionsData = [];
+                }
+                
                 const username = memberRow.querySelector('td:first-child').textContent;
                 showPermissionsDrawer(memberId, username, permissionsData);
             });
@@ -293,21 +383,33 @@
         const closePermissionsDrawerBtn = document.getElementById('closePermissionsDrawerBtn');
         const permissionsDrawerOverlay = document.getElementById('permissionsDrawerOverlay');
         const showPermissionsDrawer = (memberId, username, currentPermissions) => {
+            console.log('显示权限抽屉 - 用户:', username, '权限:', currentPermissions);
+            
             document.getElementById('permissionUserName').textContent = username;
             document.getElementById('currentMemberIdForPermissions').value = memberId;
             
             // Reset all checkboxes
             for (const key in ALL_PERMISSIONS) {
-                if (ALL_PERMISSIONS.hasOwnProperty(key)) {
+                if (ALL_PERMISSIONS.hasOwnProperty(key) && ALL_PERMISSIONS[key]) {
                     ALL_PERMISSIONS[key].checked = false;
+                    console.log('重置复选框:', key, '元素:', ALL_PERMISSIONS[key]);
                 }
             }
+            
             // Set checked based on currentPermissions
-            currentPermissions.forEach(perm => {
-                if (ALL_PERMISSIONS[perm]) {
-                    ALL_PERMISSIONS[perm].checked = true;
-                }
-            });
+            if (Array.isArray(currentPermissions)) {
+                currentPermissions.forEach(perm => {
+                    console.log('检查权限:', perm, '对应元素:', ALL_PERMISSIONS[perm]);
+                    if (ALL_PERMISSIONS[perm]) {
+                        ALL_PERMISSIONS[perm].checked = true;
+                        console.log('已勾选权限:', perm);
+                    } else {
+                        console.log('权限元素未找到:', perm);
+                    }
+                });
+            } else {
+                console.log('权限数据不是数组:', currentPermissions, '类型:', typeof currentPermissions);
+            }
 
             permissionsDrawer.classList.remove('translate-x-full', 'hidden');
             permissionsDrawer.classList.add('translate-x-0');
@@ -334,7 +436,10 @@
         const permTemuY2GzlHtml = document.getElementById('perm_temu_y2gzl_html');
         const permExpenseAllocationFunction = document.getElementById('perm_expense_allocation_function');
         const permBarcodeGeneratorHtml = document.getElementById('perm_barcode_generator_html');
+
         const permStatisticalFunction = document.getElementById('perm_statistical_function'); // 新增：统计功能权限元素
+        const permQueryFunction = document.getElementById('perm_query_function'); // 新增：查询功能权限元素
+        const permProductExtractorHtml = document.getElementById('perm_product_extractor_html'); // 新增：Temu产品提取器权限元素
 
         // 定义所有可能的功能权限及其对应的标识符
         const ALL_PERMISSIONS = {
@@ -342,7 +447,9 @@
             'temu_y2gzl_html': permTemuY2GzlHtml,
             'expense_allocation_function': permExpenseAllocationFunction,
             'barcode_generator_html': permBarcodeGeneratorHtml,
-            'statistical_function': permStatisticalFunction // 新增：统计功能权限
+            'statistical_function': permStatisticalFunction, // 统计功能权限
+            'query_function': permQueryFunction, // 查询功能权限
+            'product_extractor_html': permProductExtractorHtml // 新增：Temu产品提取器权限
         };
 
         if (permissionsForm) {
@@ -358,6 +465,8 @@
                     }
                 }
 
+                console.log('保存权限 - 用户ID:', memberId, '选中权限:', selectedPermissions);
+                
                 try {
                     const response = await fetch(`/api/member/${memberId}/permissions`, {
                         method: 'PUT',
@@ -367,19 +476,51 @@
                         body: JSON.stringify({ permissions: selectedPermissions })
                     });
 
+                    console.log('权限更新响应状态:', response.status);
+                    
                     const result = await response.json();
+                    console.log('权限更新响应数据:', result);
 
                     if (response.ok) {
                         showAlert('success', '权限更新成功', result.message || '会员权限已成功更新！', 1500);
                         hidePermissionsDrawer();
-                        // 重新加载会员数据以更新表格中的权限显示
-                        location.reload(); 
+                        
+                        // 更新对应行的权限数据和显示
+                        const memberRow = document.querySelector(`tr[data-id="${memberId}"]`);
+                        if (memberRow) {
+                            const newPermissionsStr = JSON.stringify(selectedPermissions);
+                            memberRow.setAttribute('data-permissions', newPermissionsStr);
+                            
+                            // 更新权限显示列
+                            const permissionDisplay = memberRow.querySelector('.permissions-display');
+                            if (permissionDisplay) {
+                                permissionDisplay.setAttribute('data-permissions', newPermissionsStr);
+                                
+                                // 直接更新显示内容
+                                if (selectedPermissions.length > 0) {
+                                    const permissionNames = selectedPermissions.map(p => PERMISSION_NAMES[p] || p).join(', ');
+                                    permissionDisplay.innerHTML = `<span class="text-green-600">${permissionNames}</span>`;
+                                } else {
+                                    permissionDisplay.innerHTML = '<span class="text-gray-400">无权限</span>';
+                                }
+                            }
+                        }
                     } else {
+                        console.error('权限更新失败:', result);
                         showAlert('error', '权限更新失败', result.message || '更新会员权限失败。');
                     }
                 } catch (error) {
                     console.error('更新会员权限时发生错误:', error);
-                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                    console.error('错误堆栈:', error.stack);
+                    
+                    // 区分不同类型的错误
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        showAlert('error', '网络错误', '无法连接到服务器，请检查网络连接。');
+                    } else if (error.name === 'SyntaxError') {
+                        showAlert('error', '数据格式错误', '服务器返回的数据格式有误。');
+                    } else {
+                        showAlert('error', '操作失败', `权限更新时发生错误: ${error.message}`);
+                    }
                 }
             });
         }
@@ -456,39 +597,44 @@
             }
 
             try {
-                let response;
                 const dataToSave = { merchant_id_code, merchant_code, merchant_name }; // 包含商家编号
 
                 if (id) {
                     // Update existing merchant
-                    response = await supabase
-                        .from('merchants')
-                        .update(dataToSave)
-                        .eq('id', id);
-                } else {
-                    // Add new merchant
-                    response = await supabase
-                        .from('merchants')
-                        .insert([dataToSave]);
-                }
-
-                if (response.error) {
-                    if (response.error.code === '23505') { // Unique violation error code for PostgreSQL
-                        // 检查是哪个唯一约束被违反
-                        if (response.error.message.includes('merchant_id_code')) {
-                            showAlert('error', '保存失败', '商家编号已存在，请重新生成或使用其他编号。');
-                        } else if (response.error.message.includes('merchant_code')) {
-                            showAlert('error', '保存失败', '商家代号已存在，请使用其他代号。');
-                        } else {
-                            showAlert('error', '保存失败', response.error.message);
-                        }
+                    const response = await fetch(`/api/merchants/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dataToSave)
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showAlert('success', '更新成功', '商家信息已更新！', 1500);
+                        hideMerchantDrawer();
+                        loadMerchants(); // Reload merchant list
                     } else {
-                        showAlert('error', '保存失败', response.error.message);
+                        showAlert('error', '更新失败', result.message || '更新商家失败。');
                     }
                 } else {
-                    showAlert('success', '保存成功', '商家信息已保存！', 1500);
-                    hideMerchantDrawer();
-                    loadMerchants(); // Reload merchant list
+                    // Add new merchant
+                    const response = await fetch('/api/merchants', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dataToSave)
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showAlert('success', '保存成功', '商家信息已保存！', 1500);
+                        hideMerchantDrawer();
+                        loadMerchants(); // Reload merchant list
+                    } else {
+                        showAlert('error', '保存失败', result.message || '保存商家失败。');
+                    }
                 }
             } catch (error) { // 捕获网络或其他异常
                 console.error('保存商家信息时发生错误:', error);
@@ -498,20 +644,26 @@
 
         // Load Merchants Data
         async function loadMerchants(searchTerm = '') {
-            let query = supabase.from('merchants').select('*').order('merchant_id_code', { ascending: true }); // 按编号排序
-
-            if (searchTerm) {
-                query = query.or(`merchant_id_code.ilike.%${searchTerm}%,merchant_code.ilike.%${searchTerm}%,merchant_name.ilike.%${searchTerm}%`); // 搜索也包含商家编号
+            try {
+                let url = '/api/merchants';
+                if (searchTerm) {
+                    url += `?search=${encodeURIComponent(searchTerm)}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    allMerchants = result.data || []; // Store all fetched merchants for search
+                    renderMerchantsTable(allMerchants); // Render filtered or all data
+                } else {
+                    console.error('Error fetching merchants:', result.message);
+                    merchantsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-4">加载失败: ${result.message}</td></tr>`; // 调整colspan
+                }
+            } catch (error) {
+                console.error('Error fetching merchants:', error);
+                merchantsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-4">网络连接失败</td></tr>`; // 调整colspan
             }
-
-            const { data, error } = await query;
-            if (error) {
-                console.error('Error fetching merchants:', error.message);
-                merchantsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`; // 调整colspan
-                return;
-            }
-            allMerchants = data || []; // Store all fetched merchants for search
-            renderMerchantsTable(allMerchants); // Render filtered or all data
         }
 
         function renderMerchantsTable(merchantsToRender) {
@@ -558,16 +710,16 @@
                     const result = await showAlert('question', '确认删除？', `确定要删除商家 ${merchantName} 吗？此操作不可撤销！`);
                     if (result.isConfirmed) {
                         try {
-                            const { error } = await supabase
-                                .from('merchants')
-                                .delete()
-                                .eq('id', merchantId);
-                           
-                            if (error) {
-                                showAlert('error', '删除失败', error.message);
-                            } else {
+                            const response = await fetch(`/api/merchants/${merchantId}`, {
+                                method: 'DELETE'
+                            });
+                            
+                            const result = await response.json();
+                            if (response.ok && result.success) {
                                 showAlert('success', '删除成功', '商家已删除！', 1500);
                                 loadMerchants(); // Reload list after deletion
+                            } else {
+                                showAlert('error', '删除失败', result.message || '删除商家失败。');
                             }
                         } catch (error) {
                             console.error('删除商家时发生错误:', error);
@@ -581,24 +733,23 @@
         // 函数：生成新的商家编号
         async function generateNewMerchantIdCode() {
             try {
-                const { data: latestMerchant, error } = await supabase
-                    .from('merchants')
-                    .select('merchant_id_code')
-                    .order('merchant_id_code', { ascending: false })
-                    .limit(1);
-
+                const response = await fetch('/api/merchants');
+                const result = await response.json();
+                
                 let nextId = 1;
-                if (latestMerchant && latestMerchant.length > 0 && latestMerchant[0].merchant_id_code) {
-                    const lastIdCode = latestMerchant[0].merchant_id_code;
-                    const lastIdNum = parseInt(lastIdCode, 10);
-                    if (!isNaN(lastIdNum)) {
-                        nextId = lastIdNum + 1;
-                    }
+                if (response.ok && result.success && result.data && result.data.length > 0) {
+                    // 找到最大的编号
+                    const maxId = Math.max(...result.data.map(merchant => {
+                        const idCode = merchant.merchant_id_code;
+                        const idNum = parseInt(idCode, 10);
+                        return isNaN(idNum) ? 0 : idNum;
+                    }));
+                    nextId = maxId + 1;
                 }
                 merchantIdCodeInput.value = String(nextId).padStart(4, '0');
             } catch (e) {
-                console.error('自动生成商家编号失败:', e.message);
-                showAlert('error', '自动生成商家编号失败', e.message);
+                console.error('自动生成商家编号失败:', e);
+                showAlert('error', '自动生成商家编号失败', e.message || '网络连接失败');
                 merchantIdCodeInput.value = ''; // 失败时清空
             }
         }
@@ -610,6 +761,201 @@
                 loadMerchants(searchTerm); // Load merchants with search term
             });
         }
+
+        // Sub-account Management Logic
+        const addNewSubAccountBtn = document.getElementById('addNewSubAccountBtn');
+        const newAccountDrawer = document.getElementById('newAccountDrawer');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const cancelNewAccountBtn = document.getElementById('cancelNewAccountBtn');
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        const newSubAccountForm = document.getElementById('newSubAccountForm');
+
+        const showSubAccountDrawer = () => {
+            newAccountDrawer.classList.remove('translate-x-full', 'hidden');
+            newAccountDrawer.classList.add('translate-x-0');
+            drawerOverlay.classList.remove('hidden');
+        };
+
+        const hideSubAccountDrawer = () => {
+            newAccountDrawer.classList.remove('translate-x-0');
+            newAccountDrawer.classList.add('translate-x-full');
+            drawerOverlay.classList.add('hidden');
+            // 清空表单
+            newSubAccountForm.reset();
+        };
+
+        if (addNewSubAccountBtn) {
+            addNewSubAccountBtn.addEventListener('click', showSubAccountDrawer);
+        }
+
+        if (closeDrawerBtn) {
+            closeDrawerBtn.addEventListener('click', hideSubAccountDrawer);
+        }
+
+        if (cancelNewAccountBtn) {
+            cancelNewAccountBtn.addEventListener('click', hideSubAccountDrawer);
+        }
+
+        if (drawerOverlay) {
+            drawerOverlay.addEventListener('click', hideSubAccountDrawer);
+        }
+
+        if (newSubAccountForm) {
+            newSubAccountForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('newUsername').value.trim();
+                const password = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const email = document.getElementById('newEmail').value.trim();
+
+                // 验证输入
+                if (!username || !password) {
+                    showAlert('warning', '输入有误', '账号名和密码不能为空。');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showAlert('warning', '密码不匹配', '两次输入的密码不一致。');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password,
+                            email: email || `${username}`,
+                            role: 'user',
+                            notes: '子账号'
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showAlert('success', '创建成功', '子账号已创建！', 1500);
+                        hideSubAccountDrawer();
+                        // 重新加载页面以显示新用户
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert('error', '创建失败', result.message || '创建子账号失败。');
+                    }
+                } catch (error) {
+                    console.error('创建子账号时发生错误:', error);
+                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                }
+            });
+        }
+
+        // 编辑用户抽屉逻辑
+        const editUserDrawer = document.getElementById('editUserDrawer');
+        const closeEditUserDrawerBtn = document.getElementById('closeEditUserDrawerBtn');
+        const editUserDrawerOverlay = document.getElementById('editUserDrawerOverlay');
+        const editUserForm = document.getElementById('editUserForm');
+        const cancelEditUserBtn = document.getElementById('cancelEditUserBtn');
+
+        // 显示编辑用户抽屉
+        const showEditUserDrawer = (memberId, username, notes) => {
+            console.log('显示编辑用户抽屉:', { memberId, username, notes });
+            
+            // 填充表单数据
+            document.getElementById('editUserId').value = memberId;
+            document.getElementById('editUsernameDisplay').textContent = username;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editPasswordConfirm').value = '';
+            document.getElementById('editNotes').value = notes || '';
+            
+            // 显示抽屉
+            editUserDrawer.classList.remove('translate-x-full', 'hidden');
+            editUserDrawer.classList.add('translate-x-0');
+            editUserDrawerOverlay.classList.remove('hidden');
+        };
+
+        // 隐藏编辑用户抽屉
+        const hideEditUserDrawer = () => {
+            editUserDrawer.classList.remove('translate-x-0');
+            editUserDrawer.classList.add('translate-x-full');
+            editUserDrawerOverlay.classList.add('hidden');
+        };
+
+        // 关闭按钮事件
+        if (closeEditUserDrawerBtn) {
+            closeEditUserDrawerBtn.addEventListener('click', hideEditUserDrawer);
+        }
+        if (editUserDrawerOverlay) {
+            editUserDrawerOverlay.addEventListener('click', hideEditUserDrawer);
+        }
+        if (cancelEditUserBtn) {
+            cancelEditUserBtn.addEventListener('click', hideEditUserDrawer);
+        }
+
+        // 编辑用户表单提交
+        if (editUserForm) {
+            editUserForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const userId = document.getElementById('editUserId').value;
+                const password = document.getElementById('editPassword').value.trim();
+                const passwordConfirm = document.getElementById('editPasswordConfirm').value.trim();
+                const notes = document.getElementById('editNotes').value.trim();
+                
+                // 验证密码
+                if (!password) {
+                    showAlert('warning', '输入有误', '新密码不能为空。');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showAlert('warning', '密码太短', '密码长度至少为6位。');
+                    return;
+                }
+                
+                if (password !== passwordConfirm) {
+                    showAlert('warning', '密码不匹配', '两次输入的密码不一致，请重新输入。');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/member/${userId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            password: password,
+                            notes: notes
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        showAlert('success', '更新成功', '用户密码和备注已更新！', 1500);
+                        hideEditUserDrawer();
+                        
+                        // 更新表格中的备注数据
+                        const memberRow = document.querySelector(`tr[data-id="${userId}"]`);
+                        if (memberRow) {
+                            memberRow.querySelector('td:nth-child(3)').textContent = notes || '';
+                        }
+                    } else {
+                        showAlert('error', '更新失败', result.message || '更新用户信息失败。');
+                    }
+                } catch (error) {
+                    console.error('更新用户信息时发生错误:', error);
+                    showAlert('error', '网络错误', '无法连接到服务器，请稍后再试。');
+                }
+            });
+        }
+
+        // 将 showEditUserDrawer 函数暴露给全局作用域，以便编辑按钮可以调用
+        window.showEditUserDrawer = showEditUserDrawer;
     });
   </script>
 
@@ -704,15 +1050,79 @@
             <input type="checkbox" id="perm_barcode_generator_html" name="permissions" value="barcode_generator_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
             <label for="perm_barcode_generator_html" class="ml-2 block text-sm text-gray-900">条形码生成</label>
           </div>
-          <div class="flex items-center">
+
+                    <div class="flex items-center">
             <input type="checkbox" id="perm_statistical_function" name="permissions" value="statistical_function" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
             <label for="perm_statistical_function" class="ml-2 block text-sm text-gray-900">统计功能</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_query_function" name="permissions" value="query_function" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_query_function" class="ml-2 block text-sm text-gray-900">查询功能</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="perm_product_extractor_html" name="permissions" value="product_extractor_html" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <label for="perm_product_extractor_html" class="ml-2 block text-sm text-gray-900">Temu产品提取器</label>
           </div>
         </div>
 
         <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
           <button type="button" id="cancelPermissionsBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
           <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">保存权限</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit User Drawer -->
+  <div id="editUserDrawer" class="fixed inset-0 z-50 transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+    <!-- Overlay -->
+    <div id="editUserDrawerOverlay" class="absolute inset-0 bg-black bg-opacity-50 hidden"></div>
+
+    <!-- Drawer Panel -->
+    <div class="absolute right-0 top-0 w-full md:w-1/3 h-full bg-white shadow-xl flex flex-col p-6">
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">编辑用户信息</h2>
+        <button id="closeEditUserDrawerBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="editUserForm" class="flex-grow space-y-4">
+        <input type="hidden" id="editUserId">
+        
+        <!-- 只读的用户名显示 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">用户名</label>
+          <div id="editUsernameDisplay" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"></div>
+        </div>
+        
+        <!-- 密码编辑字段 -->
+        <div>
+          <label for="editPassword" class="block text-sm font-medium text-gray-700">*新密码</label>
+          <input type="password" id="editPassword" name="password" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                 placeholder="请输入新密码">
+        </div>
+        
+        <!-- 确认密码字段 -->
+        <div>
+          <label for="editPasswordConfirm" class="block text-sm font-medium text-gray-700">*确认新密码</label>
+          <input type="password" id="editPasswordConfirm" name="password_confirm" required
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                 placeholder="请再次输入新密码">
+        </div>
+        
+        <!-- 备注编辑字段 -->
+        <div>
+          <label for="editNotes" class="block text-sm font-medium text-gray-700">备注</label>
+          <textarea id="editNotes" name="notes" rows="3"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    placeholder="请输入备注信息"></textarea>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-auto">
+          <button type="button" id="cancelEditUserBtn" class="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300 text-sm">取消</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm">保存更改</button>
         </div>
       </form>
     </div>

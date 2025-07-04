@@ -3,26 +3,1860 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>条形码生成</title>
+  <title>条形码生成器 - 更新版本</title>
+  <!-- 版本标识：20241228-002 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <style>
-    /* 可以在这里添加自定义样式 */
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+    /* 现代化条形码生成器样式 - v3.0 */
+    
+    /* 全局容器优化 */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+    
+    /* 主内容区域 */
+    .main-content {
+      background: transparent;
+      padding: 0;
+    }
+    
+    /* 内部白色容器 */
+    .inner-container {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+    
+    /* 选项卡美化 */
+    .tabs-container {
+      background: #f8fafc;
+      padding: 6px;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 4px;
+    }
+    
+    .tab-button {
+      flex: 1;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .tab-active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .tab-inactive {
+      background: transparent;
+      color: #64748b;
+    }
+    
+    .tab-inactive:hover {
+      background: #e2e8f0;
+      color: #475569;
+    }
+    
+    /* 工作区网格 */
+    .work-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 2rem;
+      min-height: 500px;
+    }
+    
+    /* 卡片样式 */
+    .work-card {
+      background: #fafafa;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .work-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+    }
+    
+    .card-icon {
+      font-size: 1.5rem;
+    }
+    
+    /* 表单元素美化 */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    
+    /* 按钮美化 */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+    
+    .btn-success:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    /* 状态卡片 */
+    .status-card {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+    
+    .status-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0 8px 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+    
+    /* 上传区域 */
+    .upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: #fafafa;
+    }
+    
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    
+    .upload-area.dragover {
+      border-color: #667eea;
+      background: #ede9fe;
+      transform: scale(1.02);
+    }
+    
+    /* 查询界面优化 */
+    .search-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .search-input-group {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 16px 60px 16px 20px;
+      font-size: 1.125rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    
+    .search-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1200px) {
+      .work-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .work-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .container {
+        padding: 0 1rem;
+      }
+      
+      .main-content {
+        padding: 1rem;
+      }
+      
+      .inner-container {
+        padding: 1rem;
+      }
+    }
+    
+    .file-upload-area {
+      border: 2px dashed #d1d5db;
+      transition: all 0.3s ease;
+    }
+    .file-upload-area:hover {
+      border-color: #6366f1;
+      background-color: #f8fafc;
+    }
+    .file-upload-area.dragover {
+      border-color: #6366f1;
+      background-color: #eef2ff;
+      transform: scale(1.02);
+    }
+    
+    /* PDF上传区域样式 */
+    #pdfUploadArea {
+      border-color: #ef4444;
+    }
+    #pdfUploadArea:hover {
+      border-color: #dc2626;
+      background-color: #fef2f2;
+    }
+    #pdfUploadArea.dragover {
+      border-color: #dc2626;
+      background-color: #fee2e2;
+      transform: scale(1.02);
+    }
+    
+    /* 文件列表样式 */
+    #pdfFileList {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    
+    #pdfFileList::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #pdfFileList::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+    
+    #pdfFileList::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .barcode-preview {
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #barcode {
+      max-width: 100%;
+      height: auto;
+      max-height: 180px;
+    }
+    
+    /* 自定义滚动条样式 */
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+    }
+    
+    .scrollbar-track-gray-100::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+    
+    /* 上传成功提示动画 */
+    @keyframes bounce {
+      0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0,0,0);
+      }
+      40%, 43% {
+        transform: translate3d(0,-8px,0);
+      }
+      70% {
+        transform: translate3d(0,-4px,0);
+      }
+      90% {
+        transform: translate3d(0,-2px,0);
+      }
+    }
+    
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+    
+    .upload-success-animation {
+      animation: fadeInScale 0.3s ease-out;
+    }
+    
+    .success-pulse {
+      animation: pulse 2s infinite;
+    }
+
+    /* 自定义样式 */
+    .main-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    .background-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      33% { transform: translateY(-20px) rotate(1deg); }
+      66% { transform: translateY(10px) rotate(-1deg); }
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      color: white;
+    }
+    
+    .page-title {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      background: linear-gradient(45deg, #ffffff, #e0e7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .page-subtitle {
+      font-size: 1.25rem;
+      opacity: 0.9;
+      font-weight: 300;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal flex items-center justify-center min-h-screen">
+<body class="font-sans leading-normal tracking-normal min-h-screen py-8" style="background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);">
 
-  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">条形码生成</h1>
-    <p class="text-gray-600 mb-6">您可以在这里生成和管理您的条形码。</p>
-    
-    <!-- 可以在这里添加条形码输入、生成按钮和显示区域 -->
-    <div class="mt-8">
-      <a href="{{ url_for('pt_function_interface') }}" class="inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300">
-        <i class="fa fa-arrow-left mr-2"></i> 返回功能列表
+  <!-- 引入用户状态栏 -->
+  {% include 'user_status_bar.html' %}
+
+  <div class="container">
+    <!-- 标题区域 -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-white mb-3">条形码生成器</h1>
+      <p class="text-gray-200 text-lg">快速生成和下载专业条形码</p>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+      <div class="inner-container">
+        
+        <!-- 功能选项卡 -->
+        <div class="tabs-container">
+          <button id="batchTab" class="tab-button tab-active">
+            <i class="fa fa-list"></i>批量导入
+          </button>
+          <button id="singleTab" class="tab-button tab-inactive">
+            <i class="fa fa-search"></i>查询文件
+          </button>
+        </div>
+
+        <!-- 批量导入面板 -->
+        <div id="batchPanel">
+          <div class="work-grid">
+            
+            <!-- 输入区域 -->
+            <div class="work-card">
+              <div class="card-header">
+                <i class="fa fa-keyboard-o card-icon text-indigo-600"></i>
+                <h3 class="card-title">单号输入</h3>
+              </div>
+              
+              <div class="form-group">
+                <label for="batchTextArea" class="form-label">
+                  批量输入单号 (每行一个)
+                </label>
+                <textarea 
+                  id="batchTextArea"
+                  placeholder="请输入单号，每行一个，例如：&#10;PO-211-20713364403832603&#10;PO-212-20713364403832604&#10;PO-213-20713364403832605"
+                  class="form-textarea"
+                ></textarea>
+                <div class="flex justify-between text-sm text-gray-500 mt-1">
+                  <span id="lineCount">0 行</span>
+                  <span>支持复制粘贴</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="form-group">
+                  <label for="batchFormat" class="form-label">条形码格式</label>
+                  <select id="batchFormat" class="form-select">
+                    <option value="CODE128">CODE128</option>
+                    <option value="CODE39">CODE39</option>
+                    <option value="EAN13">EAN13</option>
+                    <option value="EAN8">EAN8</option>
+                    <option value="UPC">UPC</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="batchWidth" class="form-label">线条宽度</label>
+                  <select id="batchWidth" class="form-select">
+                    <option value="1">细</option>
+                    <option value="2" selected>标准</option>
+                    <option value="3">粗</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <button id="generateBatchBtn" class="btn btn-primary w-full" disabled>
+                  <i class="fa fa-magic"></i>
+                  批量生成条形码
+                </button>
+                
+                <button id="downloadAllPDF" class="btn btn-success w-full" disabled>
+                  <i class="fa fa-file-pdf-o"></i>
+                  下载全部PDF (100×100mm)
+                </button>
+              </div>
+            </div>
+            
+            <!-- 预览状态区域 -->
+            <div class="work-card">
+              <div class="card-header">
+                <i class="fa fa-eye card-icon text-green-600"></i>
+                <h3 class="card-title">预览与状态</h3>
+              </div>
+              
+              <!-- 条码预览区域 -->
+              <div class="mb-6">
+                <div class="bg-gray-50 rounded-lg border-2 border-gray-200 p-4 min-h-40">
+                  <div id="previewContainer" class="hidden">
+                    <div class="flex items-center justify-between mb-4">
+                      <span class="text-lg font-medium text-gray-700">条码预览</span>
+                      <span id="previewCount" class="text-base text-gray-500">0/0</span>
+                    </div>
+                    <div id="previewScrollArea" class="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      <div id="previewGrid" class="flex space-x-3 pb-2">
+                        <!-- 预览条码将在这里动态生成 -->
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div id="noPreviewContainer" class="flex items-center justify-center h-40">
+                    <div class="text-center text-gray-400">
+                      <i class="fa fa-barcode text-4xl mb-3"></i>
+                      <p class="text-lg">批量生成后，预览将在此横向显示</p>
+                      <p class="text-base text-gray-500 mt-2">支持左右滑动查看</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 生成状态 -->
+              <div class="status-card">
+                <div class="status-grid">
+                  <div class="status-item">
+                    <span>待处理:</span>
+                    <span id="pendingCount" class="font-medium">0</span>
+                  </div>
+                  <div class="status-item">
+                    <span>已生成:</span>
+                    <span id="generatedCount" class="font-medium text-green-600">0</span>
+                  </div>
+                  <div class="status-item">
+                    <span>失败:</span>
+                    <span id="failedCount" class="font-medium text-red-600">0</span>
+                  </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="progress-bar">
+                  <div id="progressBar" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="progressText" class="text-sm text-gray-500 text-center">准备就绪</div>
+              </div>
+            </div>
+            
+            <!-- PDF文件上传区域 -->
+            <div class="work-card">
+              <div class="card-header">
+                <i class="fa fa-file-pdf-o card-icon text-red-600"></i>
+                <h3 class="card-title">上传订单号PDF</h3>
+              </div>
+              
+              <!-- 文件上传区域 -->
+              <div id="pdfUploadArea" class="upload-area mb-4">
+                <div class="text-gray-400 mb-3">
+                  <i class="fa fa-cloud-upload text-4xl"></i>
+                </div>
+                <div class="mb-3">
+                  <p class="text-lg font-medium text-gray-700">上传PDF文件</p>
+                  <p class="text-sm text-gray-500">支持单个PDF或ZIP压缩包</p>
+                </div>
+                <div class="text-sm text-gray-400">
+                  支持 PDF, ZIP 格式
+                </div>
+                <input 
+                  type="file" 
+                  id="pdfFileInput" 
+                  accept=".pdf,.zip"
+                  multiple
+                  class="hidden"
+                >
+              </div>
+              
+              <!-- 上传进度 -->
+              <div id="uploadProgress" class="mb-4 hidden">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">上传进度</span>
+                  <span id="uploadPercent" class="text-sm text-gray-600">0%</span>
+                </div>
+                <div class="progress-bar">
+                  <div id="uploadProgressBar" class="progress-fill" style="width: 0%"></div>
+                </div>
+              </div>
+              
+              <!-- 上传成功提示 -->
+              <div id="uploadSuccessMessage" class="mt-4 hidden">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-lg">
+                  <div class="flex items-center justify-center mb-4">
+                    <div class="bg-green-500 rounded-full p-3 shadow-lg">
+                      <i class="fa fa-check text-white text-2xl"></i>
+                    </div>
+                  </div>
+                  <div class="text-center">
+                    <h4 class="text-xl font-bold text-green-800 mb-2">
+                      <i class="fa fa-sparkles mr-2"></i>
+                      上传成功！
+                    </h4>
+                    <p id="uploadSuccessText" class="text-green-700 text-lg font-medium">
+                      文件已成功上传到服务器
+                    </p>
+                    <div class="mt-4 flex items-center justify-center space-x-2">
+                      <div class="h-2 w-2 bg-green-400 rounded-full animate-bounce"></div>
+                      <div class="h-2 w-2 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                      <div class="h-2 w-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 查询文件面板 -->
+        <div id="singlePanel" class="hidden">
+          <div class="search-container">
+            
+            <!-- 查询区域 -->
+            <div class="work-card mb-6">
+              <div class="card-header">
+                <i class="fa fa-search card-icon text-blue-600"></i>
+                <h3 class="card-title">订单号查询</h3>
+              </div>
+              
+              <div class="form-group">
+                <label for="searchOrderInput" class="form-label">
+                  输入订单号进行查询
+                </label>
+                <div class="search-input-group">
+                  <input 
+                    type="text" 
+                    id="searchOrderInput" 
+                    placeholder="请输入订单号，如：PO-211-20713364403832603"
+                    class="search-input"
+                  >
+                  <button id="searchBtn" class="search-btn">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">支持模糊查询，可输入部分订单号</p>
+              </div>
+
+              <!-- 快速查询历史 -->
+              <div id="recentSearches" class="hidden">
+                <label class="form-label">最近查询</label>
+                <div id="recentSearchList" class="flex flex-wrap gap-2">
+                  <!-- 最近查询项将动态生成 -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- 查询结果区域 -->
+            <div id="searchResults" class="work-card">
+              <div class="card-header">
+                <i class="fa fa-list card-icon text-green-600"></i>
+                <h4 class="card-title">查询结果</h4>
+                <span id="resultCount" class="ml-auto bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full">0</span>
+              </div>
+              
+              <!-- 默认状态 -->
+              <div id="noSearchResults" class="text-center py-12">
+                <div class="text-gray-400">
+                  <i class="fa fa-file-text-o text-5xl mb-4"></i>
+                  <p class="text-xl mb-2">输入订单号开始查询</p>
+                  <p class="text-sm">查询已上传的PDF文件中的订单信息</p>
+                </div>
+              </div>
+              
+              <!-- 结果列表 -->
+              <div id="searchResultsList" class="space-y-3 hidden">
+                <!-- 查询结果将动态生成 -->
+              </div>
+              
+              <!-- 查询中状态 -->
+              <div id="searchingStatus" class="text-center py-8 hidden">
+                <div class="text-blue-600">
+                  <i class="fa fa-spinner fa-spin text-3xl mb-3"></i>
+                  <p class="text-lg">正在查询中...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+      
+    <!-- 返回按钮 -->
+    <div class="text-center mt-8">
+      <a href="{{ url_for('pt_function_interface') }}" class="btn btn-primary">
+        <i class="fa fa-arrow-left"></i> 返回功能列表
       </a>
     </div>
   </div>
+
+  <script>
+    /**
+     * 条形码生成器主要功能
+     */
+    class BarcodeGenerator {
+      constructor() {
+        this.initializeElements();
+        this.bindEvents();
+        this.barcodes = [];
+        this.currentMode = 'batch'; // 'batch' 或 'single'
+      }
+
+      /**
+       * 初始化DOM元素
+       */
+      initializeElements() {
+        // 选项卡
+        this.batchTab = document.getElementById('batchTab');
+        this.singleTab = document.getElementById('singleTab');
+        this.batchPanel = document.getElementById('batchPanel');
+        this.singlePanel = document.getElementById('singlePanel');
+        
+        // 批量模式元素
+        this.batchTextArea = document.getElementById('batchTextArea');
+        this.batchFormat = document.getElementById('batchFormat');
+        this.batchWidth = document.getElementById('batchWidth');
+        this.generateBatchBtn = document.getElementById('generateBatchBtn');
+        this.downloadAllPDF = document.getElementById('downloadAllPDF');
+        this.lineCount = document.getElementById('lineCount');
+        
+        // 预览元素
+        this.previewContainer = document.getElementById('previewContainer');
+        this.noPreviewContainer = document.getElementById('noPreviewContainer');
+        this.previewGrid = document.getElementById('previewGrid');
+        this.previewCount = document.getElementById('previewCount');
+        this.previewScrollArea = document.getElementById('previewScrollArea');
+        
+        // 状态元素
+        this.pendingCount = document.getElementById('pendingCount');
+        this.generatedCount = document.getElementById('generatedCount');
+        this.failedCount = document.getElementById('failedCount');
+        this.progressBar = document.getElementById('progressBar');
+        this.progressText = document.getElementById('progressText');
+        
+        // 查询功能元素
+        this.searchOrderInput = document.getElementById('searchOrderInput');
+        this.searchBtn = document.getElementById('searchBtn');
+        this.recentSearches = document.getElementById('recentSearches');
+        this.recentSearchList = document.getElementById('recentSearchList');
+        this.searchResults = document.getElementById('searchResults');
+        this.noSearchResults = document.getElementById('noSearchResults');
+        this.searchResultsList = document.getElementById('searchResultsList');
+        this.searchingStatus = document.getElementById('searchingStatus');
+        this.resultCount = document.getElementById('resultCount');
+        
+        // PDF上传元素
+        this.pdfUploadArea = document.getElementById('pdfUploadArea');
+        this.pdfFileInput = document.getElementById('pdfFileInput');
+        this.uploadProgress = document.getElementById('uploadProgress');
+        this.uploadPercent = document.getElementById('uploadPercent');
+        this.uploadProgressBar = document.getElementById('uploadProgressBar');
+        this.uploadSuccessMessage = document.getElementById('uploadSuccessMessage');
+        this.uploadSuccessText = document.getElementById('uploadSuccessText');
+        
+        // PDF相关数据（简化）
+      }
+
+      /**
+       * 绑定事件监听器
+       */
+      bindEvents() {
+        // 选项卡切换
+        this.batchTab.addEventListener('click', () => this.switchToTab('batch'));
+        this.singleTab.addEventListener('click', () => this.switchToTab('single'));
+        
+        // 批量模式事件
+        this.batchTextArea.addEventListener('input', () => this.updateLineCount());
+        this.generateBatchBtn.addEventListener('click', () => this.generateBatchBarcodes());
+        this.downloadAllPDF.addEventListener('click', () => this.downloadBatchPDF());
+        
+        // 查询功能事件
+        this.searchBtn.addEventListener('click', () => this.searchOrderNumber());
+        this.searchOrderInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.searchOrderNumber();
+        });
+        this.searchOrderInput.addEventListener('input', () => this.handleSearchInput());
+        
+        // PDF上传事件
+        this.pdfUploadArea.addEventListener('click', () => this.pdfFileInput.click());
+        this.pdfUploadArea.addEventListener('dragover', (e) => this.handlePdfDragOver(e));
+        this.pdfUploadArea.addEventListener('dragleave', (e) => this.handlePdfDragLeave(e));
+        this.pdfUploadArea.addEventListener('drop', (e) => this.handlePdfDrop(e));
+        this.pdfFileInput.addEventListener('change', (e) => this.handlePdfFileSelect(e));
+        
+        // 初始化最近搜索历史
+        this.updateRecentSearches();
+      }
+
+      /**
+       * 选项卡切换
+       */
+      switchToTab(mode) {
+        this.currentMode = mode;
+        
+        if (mode === 'batch') {
+          // 切换到批量模式
+          this.batchTab.classList.add('tab-active');
+          this.batchTab.classList.remove('tab-inactive');
+          this.singleTab.classList.remove('tab-active');
+          this.singleTab.classList.add('tab-inactive');
+          
+          this.batchPanel.classList.remove('hidden');
+          this.singlePanel.classList.add('hidden');
+          
+          // 重置预览区域到初始状态
+          this.resetPreview();
+        } else {
+          // 切换到查询模式
+          this.singleTab.classList.add('tab-active');
+          this.singleTab.classList.remove('tab-inactive');
+          this.batchTab.classList.remove('tab-active');
+          this.batchTab.classList.add('tab-inactive');
+          
+          this.singlePanel.classList.remove('hidden');
+          this.batchPanel.classList.add('hidden');
+        }
+      }
+
+      /**
+       * 重置预览区域
+       */
+      resetPreview() {
+        // 隐藏预览容器，显示空状态
+        this.previewContainer.classList.add('hidden');
+        this.noPreviewContainer.classList.remove('hidden');
+        
+        // 清空预览网格
+        this.previewGrid.innerHTML = '';
+        
+        // 重置计数
+        this.previewCount.textContent = '0/0';
+      }
+
+      /**
+       * 更新行数计数
+       */
+      updateLineCount() {
+        const lines = this.batchTextArea.value.split('\n').filter(line => line.trim()).length;
+        this.lineCount.textContent = `${lines} 行`;
+        this.generateBatchBtn.disabled = lines === 0;
+        
+        // 如果没有内容，重置预览和状态
+        if (lines === 0) {
+          this.resetPreview();
+          this.barcodes = [];
+          this.downloadAllPDF.disabled = true;
+        }
+        
+        // 更新状态
+        this.updateStatus(lines, 0, 0);
+      }
+
+      /**
+       * 更新状态显示
+       */
+      updateStatus(pending, generated, failed) {
+        this.pendingCount.textContent = pending;
+        this.generatedCount.textContent = generated;
+        this.failedCount.textContent = failed;
+        
+        const total = pending + generated + failed;
+        if (total > 0) {
+          const progress = ((generated + failed) / total) * 100;
+          this.progressBar.style.width = `${progress}%`;
+          this.progressText.textContent = total === generated + failed ? '完成' : `处理中... ${generated + failed}/${total}`;
+        } else {
+          this.progressBar.style.width = '0%';
+          this.progressText.textContent = '准备就绪';
+        }
+      }
+
+      /**
+       * 批量生成条形码
+       */
+      async generateBatchBarcodes() {
+        const textContent = this.batchTextArea.value.trim();
+        if (!textContent) {
+          alert('请输入条形码内容');
+          return;
+        }
+
+        const lines = textContent.split('\n').filter(line => line.trim());
+        const format = this.batchFormat.value;
+        const width = parseInt(this.batchWidth.value);
+
+        this.barcodes = [];
+        let generated = 0;
+        let failed = 0;
+
+        // 初始化预览区域
+        this.initializePreview();
+
+        this.generateBatchBtn.disabled = true;
+        this.updateStatus(lines.length, 0, 0);
+
+        for (let i = 0; i < lines.length; i++) {
+          const text = lines[i].trim();
+          
+          try {
+            // 创建临时SVG元素用于生成条形码
+            const tempSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            
+            JsBarcode(tempSVG, text, {
+              format: format,
+              width: width,
+              height: 200,
+              displayValue: true,
+              fontSize: 28,
+              textMargin: 12,
+              background: "#ffffff",
+              lineColor: "#000000"
+            });
+
+            const barcodeData = {
+              text: text,
+              format: format,
+              width: width,
+              svgData: new XMLSerializer().serializeToString(tempSVG),
+              timestamp: new Date()
+            };
+
+            this.barcodes.push(barcodeData);
+            generated++;
+
+            // 添加到预览网格（限制显示数量以保持性能）
+            if (generated <= 20) {
+              this.addToPreviewGrid(tempSVG, text, generated);
+            }
+
+          } catch (error) {
+            console.error(`生成条码 "${text}" 失败:`, error);
+            failed++;
+          }
+
+          this.updateStatus(lines.length - generated - failed, generated, failed);
+          this.updatePreviewCount(generated, lines.length);
+          
+          // 添加短暂延迟，避免阻塞UI
+          if (i % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
+        }
+
+        this.generateBatchBtn.disabled = false;
+        this.downloadAllPDF.disabled = generated === 0;
+        
+        if (failed > 0) {
+          alert(`批量生成完成！成功: ${generated}, 失败: ${failed}`);
+        } else {
+          alert(`批量生成完成！共生成 ${generated} 个条形码`);
+        }
+      }
+
+      /**
+       * 初始化预览区域
+       */
+      initializePreview() {
+        // 清空预览网格
+        this.previewGrid.innerHTML = '';
+        
+        // 显示预览容器，隐藏空状态
+        this.previewContainer.classList.remove('hidden');
+        this.noPreviewContainer.classList.add('hidden');
+        
+        // 重置计数
+        this.updatePreviewCount(0, 0);
+      }
+
+      /**
+       * 添加条码到预览网格
+       */
+      addToPreviewGrid(svgElement, text, index) {
+        // 创建预览项容器
+        const previewItem = document.createElement('div');
+        previewItem.className = 'flex-shrink-0 bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer';
+        previewItem.style.minWidth = '140px';
+        
+        // 创建SVG容器
+        const svgContainer = document.createElement('div');
+        svgContainer.className = 'flex items-center justify-center mb-2';
+        svgContainer.style.height = '60px';
+        
+        // 复制SVG并调整大小
+        const previewSVG = svgElement.cloneNode(true);
+        previewSVG.style.maxWidth = '120px';
+        previewSVG.style.maxHeight = '50px';
+        previewSVG.style.width = 'auto';
+        previewSVG.style.height = 'auto';
+        
+        svgContainer.appendChild(previewSVG);
+        
+        // 创建文本标签
+        const textLabel = document.createElement('div');
+        textLabel.className = 'text-xs text-gray-600 text-center font-medium truncate';
+        textLabel.textContent = text;
+        textLabel.title = text; // 悬停时显示完整文本
+        
+        // 创建序号标签
+        const indexLabel = document.createElement('div');
+        indexLabel.className = 'text-xs text-gray-400 text-center mt-1';
+        indexLabel.textContent = `#${index}`;
+        
+        // 组装预览项
+        previewItem.appendChild(svgContainer);
+        previewItem.appendChild(textLabel);
+        previewItem.appendChild(indexLabel);
+        
+        // 添加点击事件（可选：点击放大查看）
+        previewItem.addEventListener('click', () => {
+          this.showBarcodeDetail(text, svgElement);
+        });
+        
+        // 添加到预览网格
+        this.previewGrid.appendChild(previewItem);
+        
+        // 自动滚动到最新添加的项目
+        setTimeout(() => {
+          previewItem.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest', 
+            inline: 'end' 
+          });
+        }, 100);
+      }
+
+      /**
+       * 更新预览计数
+       */
+      updatePreviewCount(current, total) {
+        const displayCount = Math.min(current, 20); // 最多显示20个预览
+        this.previewCount.textContent = total > 20 ? 
+          `${displayCount}/20 (共${total}个)` : 
+          `${current}/${total}`;
+      }
+
+      /**
+       * 显示条码详情（点击预览项时）
+       */
+      showBarcodeDetail(text, svgElement) {
+        // 创建模态框显示大图
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.addEventListener('click', () => modal.remove());
+        
+        const content = document.createElement('div');
+        content.className = 'bg-white rounded-lg p-6 max-w-md mx-4';
+        content.addEventListener('click', (e) => e.stopPropagation());
+        
+        const title = document.createElement('h3');
+        title.className = 'text-lg font-semibold mb-4 text-center';
+        title.textContent = '条码详情';
+        
+        const svgContainer = document.createElement('div');
+        svgContainer.className = 'flex justify-center mb-4';
+        const detailSVG = svgElement.cloneNode(true);
+        detailSVG.style.maxWidth = '100%';
+        svgContainer.appendChild(detailSVG);
+        
+        const textInfo = document.createElement('p');
+        textInfo.className = 'text-center text-gray-600 mb-4';
+        textInfo.textContent = text;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg';
+        closeBtn.textContent = '关闭';
+        closeBtn.addEventListener('click', () => modal.remove());
+        
+        content.appendChild(title);
+        content.appendChild(svgContainer);
+        content.appendChild(textInfo);
+        content.appendChild(closeBtn);
+        modal.appendChild(content);
+        
+        document.body.appendChild(modal);
+      }
+
+      /**
+       * 处理搜索输入
+       */
+      handleSearchInput() {
+        const query = this.searchOrderInput.value.trim();
+        
+        // 实时搜索建议（可选）
+        if (query.length >= 3) {
+          // 这里可以添加实时搜索建议逻辑
+        }
+        
+        // 显示最近搜索历史
+        this.updateRecentSearches();
+      }
+
+      /**
+       * 搜索订单号
+       */
+      async searchOrderNumber() {
+        const query = this.searchOrderInput.value.trim();
+        
+        if (!query) {
+          alert('请输入订单号');
+          return;
+        }
+
+        // 显示搜索中状态
+        this.showSearchingStatus();
+        
+        // 添加到最近搜索
+        this.addToRecentSearches(query);
+
+        try {
+          // 执行搜索
+          const results = await this.performSearch(query);
+          
+          // 显示搜索结果
+          this.displaySearchResults(results, query);
+          
+        } catch (error) {
+          alert(`搜索失败: ${error.message}`);
+          this.hideSearchingStatus();
+        }
+      }
+
+             /**
+        * 执行搜索
+        */
+       async performSearch(query) {
+         return new Promise((resolve) => {
+           setTimeout(() => {
+             const results = [];
+             const queryLower = query.toLowerCase();
+             
+             // 在上传的文件中搜索
+             for (let i = 0; i < this.uploadedFiles.length; i++) {
+               const file = this.uploadedFiles[i];
+               let matched = false;
+               let matchType = '';
+               let confidence = '';
+               
+               // 1. 检查文件名是否包含查询字符串
+               if (file.name.toLowerCase().includes(queryLower)) {
+                 matched = true;
+                 matchType = 'filename';
+                 confidence = 'high';
+               }
+               
+               // 2. 如果文件有对应的提取订单号，在其中搜索
+               if (file.extractedOrders && file.extractedOrders.length > 0) {
+                 const hasOrderMatch = file.extractedOrders.some(order => 
+                   order.toLowerCase().includes(queryLower)
+                 );
+                 if (hasOrderMatch) {
+                   matched = true;
+                   matchType = matchType ? `${matchType}+content` : 'content';
+                   confidence = 'high';
+                 }
+               }
+               
+               // 3. 模糊匹配：如果查询内容是文件名或订单号的子串
+               if (!matched) {
+                 // 检查是否是订单号格式的模糊匹配
+                 if (file.extractedOrders && file.extractedOrders.length > 0) {
+                   const fuzzyMatch = file.extractedOrders.some(order => {
+                     // 移除特殊字符进行模糊匹配
+                     const cleanOrder = order.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                     const cleanQuery = query.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                     return cleanOrder.includes(cleanQuery) || cleanQuery.includes(cleanOrder);
+                   });
+                   
+                   if (fuzzyMatch) {
+                     matched = true;
+                     matchType = 'fuzzy';
+                     confidence = 'medium';
+                   }
+                 }
+               }
+               
+               if (matched) {
+                 results.push({
+                   file: file,
+                   matchType: matchType,
+                   confidence: confidence,
+                   index: i
+                 });
+               }
+             }
+             
+             // 按相关性排序 (high confidence优先)
+             results.sort((a, b) => {
+               if (a.confidence === 'high' && b.confidence !== 'high') return -1;
+               if (a.confidence !== 'high' && b.confidence === 'high') return 1;
+               return 0;
+             });
+             
+             resolve(results);
+           }, 600); // 稍微减少搜索延迟
+         });
+       }
+
+      /**
+       * 显示搜索中状态
+       */
+      showSearchingStatus() {
+        this.noSearchResults.style.display = 'none';
+        this.searchResultsList.classList.add('hidden');
+        this.searchingStatus.classList.remove('hidden');
+      }
+
+      /**
+       * 隐藏搜索中状态
+       */
+      hideSearchingStatus() {
+        this.searchingStatus.classList.add('hidden');
+      }
+
+      /**
+       * 显示搜索结果
+       */
+      displaySearchResults(results, query) {
+        this.hideSearchingStatus();
+        this.resultCount.textContent = results.length;
+        
+        if (results.length === 0) {
+          this.noSearchResults.innerHTML = `
+            <div class="text-gray-400">
+              <i class="fa fa-search text-5xl mb-4"></i>
+              <p class="text-lg mb-2">未找到匹配的文件</p>
+              <p class="text-sm">请尝试其他关键词或检查拼写</p>
+            </div>
+          `;
+          this.noSearchResults.style.display = 'block';
+          this.searchResultsList.classList.add('hidden');
+          return;
+        }
+
+        this.noSearchResults.style.display = 'none';
+        this.searchResultsList.classList.remove('hidden');
+        
+        // 生成结果HTML
+        this.searchResultsList.innerHTML = results.map((result, index) => `
+          <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-all duration-300 cursor-pointer border border-gray-200"
+               onclick="barcodeGenerator.openPdfFile(${result.index})">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center flex-1">
+                <div class="flex-shrink-0 mr-4">
+                  <i class="fa fa-file-pdf-o text-red-500 text-2xl"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h5 class="text-lg font-medium text-gray-900 truncate">${result.file.name}</h5>
+                  <div class="flex items-center space-x-4 mt-1">
+                    <span class="text-sm text-gray-500">${this.formatFileSize(result.file.size)}</span>
+                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                       result.matchType.includes('filename') ? 'bg-blue-100 text-blue-800' : 
+                       result.matchType.includes('content') ? 'bg-green-100 text-green-800' :
+                       result.matchType === 'fuzzy' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                     }">
+                       ${result.matchType.includes('filename') && result.matchType.includes('content') ? '文件名+内容匹配' :
+                         result.matchType.includes('filename') ? '文件名匹配' :
+                         result.matchType.includes('content') ? '内容匹配' :
+                         result.matchType === 'fuzzy' ? '模糊匹配' : '其他匹配'}
+                     </span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      result.confidence === 'high' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }">
+                      ${result.confidence === 'high' ? '高相关' : '中等相关'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button 
+                                     onclick="event.stopPropagation(); barcodeGenerator.downloadFile(${result.index})"
+                  class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition-all duration-300"
+                  title="下载文件"
+                >
+                  <i class="fa fa-download"></i>
+                </button>
+                <button 
+                                     onclick="event.stopPropagation(); barcodeGenerator.openPdfFile(${result.index})"
+                  class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md transition-all duration-300"
+                  title="打开文件"
+                >
+                  <i class="fa fa-external-link"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      /**
+       * 打开PDF文件
+       */
+      openPdfFile(fileIndex) {
+        if (fileIndex < 0 || fileIndex >= this.uploadedFiles.length) {
+          alert('文件不存在');
+          return;
+        }
+
+        const file = this.uploadedFiles[fileIndex];
+        
+        try {
+          // 创建文件URL
+          const fileURL = URL.createObjectURL(file.file);
+          
+          // 在新窗口中打开PDF
+          const newWindow = window.open(fileURL, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+          
+          if (!newWindow) {
+            // 如果弹窗被阻止，提供下载选项
+            alert('浏览器阻止了弹窗，将为您下载文件');
+            this.downloadFile(fileIndex);
+          } else {
+            // 设置窗口标题
+            newWindow.document.title = file.name;
+          }
+          
+        } catch (error) {
+          alert(`打开文件失败: ${error.message}`);
+        }
+      }
+
+      /**
+       * 下载文件
+       */
+      downloadFile(fileIndex) {
+        if (fileIndex < 0 || fileIndex >= this.uploadedFiles.length) {
+          alert('文件不存在');
+          return;
+        }
+
+        const file = this.uploadedFiles[fileIndex];
+        
+        try {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(file.file);
+          link.download = file.name;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        } catch (error) {
+          alert(`下载文件失败: ${error.message}`);
+        }
+      }
+
+      /**
+       * 添加到最近搜索
+       */
+      addToRecentSearches(query) {
+        let recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        
+        // 移除重复项
+        recentSearches = recentSearches.filter(item => item !== query);
+        
+        // 添加到开头
+        recentSearches.unshift(query);
+        
+        // 最多保留10个
+        recentSearches = recentSearches.slice(0, 10);
+        
+        localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+        this.updateRecentSearches();
+      }
+
+      /**
+       * 更新最近搜索显示
+       */
+      updateRecentSearches() {
+        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        
+        if (recentSearches.length === 0) {
+          this.recentSearches.classList.add('hidden');
+          return;
+        }
+
+        this.recentSearches.classList.remove('hidden');
+        this.recentSearchList.innerHTML = recentSearches.map(search => `
+          <button 
+            onclick="barcodeGenerator.quickSearch('${search}')"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm transition-all duration-300"
+          >
+            ${search}
+          </button>
+        `).join('');
+      }
+
+      /**
+       * 快速搜索
+       */
+      quickSearch(query) {
+        this.searchOrderInput.value = query;
+        this.searchOrderNumber();
+      }
+
+
+
+      /**
+       * 下载批次PDF
+       */
+      downloadBatchPDF() {
+        if (this.barcodes.length === 0) {
+          alert('批次中没有条码');
+          return;
+        }
+
+        const filename = `barcodes_batch_${this.formatDate(new Date())}_${this.barcodes.length}个.pdf`;
+        this.generatePDF(this.barcodes, filename);
+      }
+
+      /**
+       * 生成PDF文件
+       */
+      async generatePDF(barcodes, filename) {
+        const { jsPDF } = window.jspdf;
+        
+        // 100mm x 100mm = 283.46 x 283.46 点 (72 DPI)
+        const pageWidth = 283.46;
+        const pageHeight = 283.46;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'pt',
+          format: [pageWidth, pageHeight]
+        });
+
+        let isFirstPage = true;
+
+        for (const barcode of barcodes) {
+          if (!isFirstPage) {
+            pdf.addPage([pageWidth, pageHeight]);
+          }
+          isFirstPage = false;
+
+          try {
+            // 将SVG转换为图片
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                // 设置canvas尺寸，保持高分辨率
+                const scale = 2;
+                canvas.width = pageWidth * scale;
+                canvas.height = pageHeight * scale;
+                ctx.scale(scale, scale);
+
+                // 白色背景
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+                // 计算条码居中位置，留出边距
+                const margin = 40;
+                const availableWidth = pageWidth - 2 * margin;
+                const availableHeight = pageHeight - 2 * margin - 30; // 预留日期空间
+
+                // 宽度增加1.8cm (约51点)，高度保持比例
+                const extraWidth = 51; // 1.8cm ≈ 51点
+                const widthScale = (availableWidth + extraWidth) / img.width;
+                const heightScale = availableHeight / img.height;
+                const imgScale = Math.min(widthScale, heightScale) * 0.9; // 稍微增加整体缩放
+
+                const finalWidth = img.width * imgScale;
+                const finalHeight = img.height * imgScale;
+                const x = (pageWidth - finalWidth) / 2;
+                const y = (pageHeight - finalHeight) / 2 - 15; // 稍微向上偏移为日期留空
+
+                ctx.drawImage(img, x, y, finalWidth, finalHeight);
+                resolve();
+              };
+              img.onerror = reject;
+              img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(barcode.svgData)));
+            });
+
+            // 添加条码图片到PDF
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+
+            // 添加日期到右下角
+            const dateStr = `TONGTU ${this.formatDate(barcode.timestamp)}`;
+            pdf.setFontSize(8);
+            pdf.setTextColor(128, 128, 128);
+            const textWidth = pdf.getTextWidth(dateStr);
+            pdf.text(dateStr, pageWidth - textWidth - 10, pageHeight - 10);
+
+          } catch (error) {
+            console.error('生成PDF时出错:', error);
+            alert(`生成条码 "${barcode.text}" 时出错: ${error.message}`);
+          }
+        }
+
+        // 下载PDF
+        pdf.save(filename);
+      }
+
+            /**
+       * 格式化日期
+       */
+      formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+      }
+
+      /**
+       * 处理PDF拖拽悬停
+       */
+      handlePdfDragOver(e) {
+        e.preventDefault();
+        this.pdfUploadArea.classList.add('dragover');
+      }
+
+      /**
+       * 处理PDF拖拽离开
+       */
+      handlePdfDragLeave(e) {
+        e.preventDefault();
+        this.pdfUploadArea.classList.remove('dragover');
+      }
+
+      /**
+       * 处理PDF文件拖拽放置
+       */
+      handlePdfDrop(e) {
+        e.preventDefault();
+        this.pdfUploadArea.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer.files);
+        this.processPdfFiles(files);
+      }
+
+      /**
+       * 处理PDF文件选择
+       */
+      handlePdfFileSelect(e) {
+        const files = Array.from(e.target.files);
+        this.processPdfFiles(files);
+      }
+
+      /**
+       * 处理PDF文件 - 调用后端API
+       */
+      async processPdfFiles(files) {
+        this.showUploadProgress();
+        
+        try {
+          // 创建FormData对象
+          const formData = new FormData();
+          for (const file of files) {
+            formData.append('files', file);
+          }
+          
+          // 调用后端API上传文件
+          const response = await fetch('/api/barcode/upload_pdf', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            this.updateUploadProgress(100);
+            
+            // 显示漂亮的成功提示
+            this.showUploadSuccess(result.data.total_files, result.data.errors);
+            
+          } else {
+            throw new Error(result.message);
+          }
+          
+        } catch (error) {
+          console.error('上传文件时出错:', error);
+          this.showUploadError(error.message);
+        } finally {
+          this.hideUploadProgress();
+        }
+      }
+
+      /**
+       * 显示上传成功提示
+       */
+      showUploadSuccess(totalFiles, errors) {
+        // 设置成功信息
+        if (errors && errors.length > 0) {
+          this.uploadSuccessText.innerHTML = `
+            <span class="text-lg">✨ 成功上传 <strong>${totalFiles}</strong> 个文件</span><br>
+            <small class="text-orange-600 mt-2 block">⚠️ 部分文件处理时有警告</small>
+          `;
+        } else {
+          this.uploadSuccessText.innerHTML = `
+            <span class="text-lg">🎉 成功上传 <strong>${totalFiles}</strong> 个文件到服务器！</span>
+          `;
+        }
+        
+        // 显示成功提示并添加动画类
+        this.uploadSuccessMessage.classList.remove('hidden');
+        this.uploadSuccessMessage.classList.add('upload-success-animation');
+        
+        // 给成功图标添加脉冲动画
+        const successIcon = this.uploadSuccessMessage.querySelector('.bg-green-500');
+        if (successIcon) {
+          successIcon.classList.add('success-pulse');
+        }
+        
+        // 8秒后自动隐藏
+        setTimeout(() => {
+          this.hideUploadSuccess();
+        }, 8000);
+      }
+
+      /**
+       * 隐藏上传成功提示
+       */
+      hideUploadSuccess() {
+        if (!this.uploadSuccessMessage.classList.contains('hidden')) {
+          // 移除动画类
+          this.uploadSuccessMessage.classList.remove('upload-success-animation');
+          
+          // 移除脉冲动画
+          const successIcon = this.uploadSuccessMessage.querySelector('.bg-green-500');
+          if (successIcon) {
+            successIcon.classList.remove('success-pulse');
+          }
+          
+          // 淡出动画
+          this.uploadSuccessMessage.style.transition = 'all 0.3s ease-in';
+          this.uploadSuccessMessage.style.transform = 'scale(0.9)';
+          this.uploadSuccessMessage.style.opacity = '0';
+          
+          setTimeout(() => {
+            this.uploadSuccessMessage.classList.add('hidden');
+            this.uploadSuccessMessage.style.transform = '';
+            this.uploadSuccessMessage.style.opacity = '';
+            this.uploadSuccessMessage.style.transition = '';
+          }, 300);
+        }
+      }
+
+      /**
+       * 显示上传错误提示
+       */
+      showUploadError(errorMessage) {
+        // 创建错误提示
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 max-w-md border-l-4 border-red-300';
+        errorDiv.innerHTML = `
+          <div class="flex items-start">
+            <div class="bg-red-400 rounded-full p-2 mr-4 flex-shrink-0">
+              <i class="fa fa-exclamation text-white text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-bold text-lg mb-1">❌ 上传失败</h4>
+              <p class="text-red-100 text-sm leading-relaxed">${errorMessage}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-red-200 hover:text-white transition-colors duration-200 flex-shrink-0">
+              <i class="fa fa-times text-lg"></i>
+            </button>
+          </div>
+        `;
+        
+        document.body.appendChild(errorDiv);
+        
+        // 入场动画
+        errorDiv.style.transform = 'translateX(100%) scale(0.8)';
+        errorDiv.style.opacity = '0';
+        setTimeout(() => {
+          errorDiv.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          errorDiv.style.transform = 'translateX(0) scale(1)';
+          errorDiv.style.opacity = '1';
+        }, 50);
+        
+        // 6秒后自动移除
+        setTimeout(() => {
+          if (errorDiv.parentElement) {
+            errorDiv.style.transition = 'all 0.3s ease-in';
+            errorDiv.style.transform = 'translateX(100%) scale(0.9)';
+            errorDiv.style.opacity = '0';
+            setTimeout(() => {
+              errorDiv.remove();
+            }, 300);
+          }
+        }, 6000);
+      }
+
+      /**
+       * 显示上传进度
+       */
+      showUploadProgress() {
+        this.uploadProgress.classList.remove('hidden');
+        this.updateUploadProgress(0);
+      }
+
+      /**
+       * 更新上传进度
+       */
+      updateUploadProgress(percent) {
+        this.uploadPercent.textContent = `${Math.round(percent)}%`;
+        this.uploadProgressBar.style.width = `${percent}%`;
+      }
+
+      /**
+       * 隐藏上传进度
+       */
+      hideUploadProgress() {
+        this.uploadProgress.classList.add('hidden');
+      }
+
+
+
+
+
+
+
+
+
+
+
+      /**
+       * 格式化文件大小
+       */
+      formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+ 
+      }
+
+    // 初始化条形码生成器
+    let barcodeGenerator;
+    document.addEventListener('DOMContentLoaded', () => {
+      barcodeGenerator = new BarcodeGenerator();
+    });
+  </script>
 
 </body>
 </html> 

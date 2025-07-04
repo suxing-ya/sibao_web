@@ -1,5 +1,61 @@
-Flask==2.3.2
+# Flask 核心框架
+Flask==2.3.3
 Werkzeug==2.3.7
-supabase
-python-dotenv
-Flask-CORS
+
+# Flask 扩展
+Flask-CORS==4.0.0
+Flask-Mail==0.9.1
+
+# 数据库驱动
+PyMySQL==1.1.0
+psycopg2-binary==2.9.7
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# 密码学/安全
+cryptography==41.0.4
+
+# HTTP 请求库
+requests==2.31.0
+
+# 可选：Supabase支持（如果需要）
+supabase==1.0.4
+
+# 生产部署
+gunicorn==20.1.0
+
+# 图像处理库
+opencv-python==4.8.1.78
+Pillow==10.0.0
+scikit-image==0.21.0
+numpy==1.24.3
+scipy==1.11.2
+
+# SVG处理
+svglib==1.5.1
+reportlab==4.0.4
+
+# PDF处理
+PyPDF2==3.0.1
+PyMuPDF==1.23.5
+
+# 网页抓取和数据处理
+beautifulsoup4==4.12.2
+lxml==4.9.3
+pandas==2.0.3
+openpyxl==3.1.2
+
+# 开发工具（可选）
+# pytest==7.4.0
+# pytest-cov==4.1.0
+
+selenium>=4.16.0
+webdriver-manager>=4.0.1
+tenacity>=8.2.3
+requests>=2.31.0
+beautifulsoup4>=4.12.3
+
+# OCR 文字识别库
+pytesseract==0.3.10
+easyocr==1.7.0

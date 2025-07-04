@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Temu Y2 货物流转工作流</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Removed Supabase dependency, now using Flask API -->
   <!-- 引入 SweetAlert2 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <!-- 引入 SweetAlert2 JavaScript -->
@@ -120,6 +120,9 @@
   </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans">
+
+  <!-- 引入用户状态栏 -->
+  {% include 'user_status_bar.html' %}
 
   <div class="container mx-auto bg-white rounded-lg shadow-md p-6">
     <div class="flex justify-between items-center mb-6">
@@ -302,10 +305,8 @@
 <!-- Merchants Datalist for Detail Table 2 -->
 <datalist id="merchantsList"></datalist>
 <script>
-    // Supabase配置
-    const SUPABASE_URL = 'https://xehoqrboglykebqvovgj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaG9xcmJvZ2x5a2VicXZvdmdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NTk2OTMsImV4cCI6MjA2NTIzNTY5M30.v8iMnNK_b3hGuum4qvreBzf19NiEJ11Dz4Q_Oy_7ySg';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 使用腾讯云MySQL API替代Supabase
+    const API_BASE_URL = window.location.origin;
 
     let allTableData = []; // Store all fetched data for client-side filtering
     let currentFilters = {
@@ -322,13 +323,15 @@
         merchantsList.innerHTML = ''; // 清空现有选项
 
         try {
-            const { data, error } = await supabase
-                .from('merchants')
-                .select('merchant_code, merchant_name')
-                .order('merchant_name', { ascending: true });
-
-            if (error) {
-                console.error('Error fetching merchants:', error.message);
+            const response = await fetch(`${API_BASE_URL}/api/merchants`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                console.error('Error fetching merchants:', result.message);
                 Swal.fire({
                     icon: 'warning',
                     title: '商家数据加载失败',
@@ -338,12 +341,16 @@
                     showConfirmButton: false,
                     timer: 3000
                 });
-            } else if (data && data.length > 0) {
+                return;
+            }
+            
+            const data = result.data || [];
+            if (data.length > 0) {
                 console.log(`成功加载 ${data.length} 个商家`);
                 data.forEach(merchant => {
                     const option = document.createElement('option');
                     option.value = merchant.merchant_name; // 当用户选择时，输入框填充商家名称
-                    option.textContent = `${merchant.merchant_code} - ${merchant.merchant_name}`; // 下拉列表中显示代号和名称
+                    option.textContent = `${merchant.merchant_id_code} - ${merchant.merchant_name}`; // 下拉列表中显示代号和名称
                     merchantsList.appendChild(option);
                 });
                 
@@ -401,31 +408,40 @@
 
     // 渲染表格数据
     async function loadTable() {
-      const from = currentPage * itemsPerPage;
-      const to = from + itemsPerPage - 1;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/temu_workflow?page=${currentPage}&limit=${itemsPerPage}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        const tbody = document.querySelector('table tbody');
+        tbody.innerHTML = '';
+        
+        if (!result.success) {
+          tbody.innerHTML = `<tr><td colspan="12" class="text-center text-red-500 py-4">加载失败: ${result.message}</td></tr>`;
+          return;
+        }
+        
+        const data = result.data || [];
+        const totalCount = result.total_count || 0;
+        
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="12" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
+          return;
+        }
+        
+        data.forEach(row => tbody.appendChild(createRow(row)));
+        updatePaginationControls(totalCount);
 
-      const { data, error, count } = await supabase
-        .from('temu_workflow')
-        .select('*', { count: 'exact' })
-        .order('id', { ascending: false })
-        .range(from, to);
-      
-      const tbody = document.querySelector('table tbody');
-      tbody.innerHTML = '';
-      if (error) {
+        // Store the fetched data for client-side filtering
+        allTableData = data;
+        applyFiltersAndRenderTable(); // Apply filters initially after loading
+      } catch (error) {
+        console.error('加载表格数据失败:', error);
+        const tbody = document.querySelector('table tbody');
         tbody.innerHTML = `<tr><td colspan="12" class="text-center text-red-500 py-4">加载失败: ${error.message}</td></tr>`;
-        return;
       }
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center text-gray-400 py-4">暂无数据</td></tr>`;
-        return;
-      }
-      data.forEach(row => tbody.appendChild(createRow(row)));
-      updatePaginationControls(count);
-
-      // Store the fetched data for client-side filtering
-      allTableData = data;
-      applyFiltersAndRenderTable(); // Apply filters initially after loading
     }
 
     // 创建一行（可编辑）
@@ -478,21 +494,23 @@
             tbody1.innerHTML = ''; // Clear previous content
 
             try {
-                const { data: shipmentIdsData, error: shipmentIdsError } = await supabase
-                    .from('temu_shipment_ids')
-                    .select('shipment_id_value')
-                    .eq('workflow_id', row.id)
-                    .order('id', { ascending: true });
-
-                if (shipmentIdsError) {
-                    console.error('Error fetching shipment IDs:', shipmentIdsError.message);
+                const response = await fetch(`${API_BASE_URL}/api/temu_shipment_ids?workflow_id=${row.id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('Error fetching shipment IDs:', result.message);
                     Swal.fire({
                         icon: 'error',
                         title: '加载货件ID失败',
-                        text: shipmentIdsError.message
+                        text: result.message
                     });
                 } else {
-                    if (shipmentIdsData && shipmentIdsData.length > 0) {
+                    const shipmentIdsData = result.data || [];
+                    if (shipmentIdsData.length > 0) {
                         shipmentIdsData.forEach(item => {
                             tbody1.appendChild(createDetailTable1Row(item.shipment_id_value, false)); // Initially not editable
                         });
@@ -516,22 +534,24 @@
             tbody2.innerHTML = ''; // Clear previous content
 
             try {
-                const { data: detailsData, error: detailsError } = await supabase
-                    .from('temu_shipment_details')
-                    .select('*') // Select all columns for details
-                    .eq('workflow_id', row.id)
-                    .order('id', { ascending: true });
+                const response = await fetch(`${API_BASE_URL}/api/temu_shipment_details?workflow_id=${row.id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
 
-                if (detailsError) {
-                    console.error('Error fetching shipment details:', detailsError.message);
+                if (!result.success) {
+                    console.error('Error fetching shipment details:', result.message);
                     Swal.fire({
                         icon: 'error',
                         title: '加载发货明细失败',
-                        text: detailsError.message
+                        text: result.message
                     });
                 } else {
                     let totalQuantity = 0;
-                    if (detailsData && detailsData.length > 0) {
+                    const detailsData = result.data || [];
+                    if (detailsData.length > 0) {
                         detailsData.forEach(item => {
                             const tr2 = document.createElement('tr');
                             tr2.innerHTML = `
@@ -677,31 +697,59 @@
           if (field.includes('date')) val = val || null;
           rowData[field] = val;
         });
-        let res;
-        if (tr.dataset.id) {
-          // 更新
-          res = await supabase.from('temu_workflow').update(rowData).eq('id', tr.dataset.id).select();
-        } else {
-          // 新增
-          res = await supabase.from('temu_workflow').insert([rowData]).select();
-        }
-        if (res.error) {
+        try {
+          let response;
+          if (tr.dataset.id) {
+            // 更新
+            response = await fetch(`${API_BASE_URL}/api/temu_workflow/${tr.dataset.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(rowData)
+            });
+          } else {
+            // 新增
+            response = await fetch(`${API_BASE_URL}/api/temu_workflow`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(rowData)
+            });
+          }
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          if (!result.success) {
+            Swal.fire({
+              icon: 'error',
+              title: '保存失败',
+              text: result.message,
+            });
+          } else {
+            Swal.fire({
+              icon: 'success',
+              title: '保存成功',
+              showConfirmButton: false,
+              timer: 1500
+            });
+            await loadTable();
+            if (tr.dataset.editMode === 'true') { // 保存成功后退出编辑模式
+              toggleEditMode(tr, false);
+            }
+          }
+        } catch (apiError) {
+          console.error('保存记录失败:', apiError);
           Swal.fire({
             icon: 'error',
             title: '保存失败',
-            text: '' + res.error.message,
+            text: '网络错误或服务器异常: ' + apiError.message,
           });
-        } else {
-          Swal.fire({
-            icon: 'success',
-            title: '保存成功',
-            showConfirmButton: false,
-            timer: 1500
-          });
-          await loadTable();
-          if (tr.dataset.editMode === 'true') { // 保存成功后退出编辑模式
-            toggleEditMode(tr, false);
-          }
         }
       } catch (e) {
         console.error("Error in saveRow:", e); // 将错误输出到控制台
@@ -720,11 +768,21 @@
         return;
       }
       if (!confirm('确定要删除这条数据吗？')) return;
-      const { error } = await supabase.from('temu_workflow').delete().eq('id', tr.dataset.id);
-      if (error) {
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/temu_workflow/${tr.dataset.id}`, {
+          method: 'DELETE'
+        });
+        const result = await response.json();
+        
+        if (!result.success) {
+          alert('删除失败: ' + result.message);
+        } else {
+          await loadTable();
+        }
+      } catch (error) {
+        console.error('删除记录失败:', error);
         alert('删除失败: ' + error.message);
-      } else {
-        await loadTable();
       }
     }
 
@@ -786,21 +844,34 @@
           });
           if (confirmDelete.isConfirmed) {
             // 执行删除操作
-            const { error } = await supabase.from('temu_workflow').delete().eq('id', tr.dataset.id);
-            if (error) {
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/temu_workflow/${tr.dataset.id}`, {
+                method: 'DELETE'
+              });
+              const result = await response.json();
+              
+              if (!result.success) {
+                Swal.fire({
+                  icon: 'error',
+                  title: '删除失败',
+                  text: `删除失败: ${result.message}`
+                });
+              } else {
+                tr.remove(); // 从DOM中移除行
+                Swal.fire(
+                  '已删除!',
+                  '您的记录已被删除。',
+                  'success'
+                );
+                loadTable(); // 重新加载表格以更新分页和行数
+              }
+            } catch (error) {
+              console.error('删除记录失败:', error);
               Swal.fire({
                 icon: 'error',
                 title: '删除失败',
                 text: `删除失败: ${error.message}`
               });
-            } else {
-              tr.remove(); // 从DOM中移除行
-              Swal.fire(
-                '已删除!',
-                '您的记录已被删除。',
-                'success'
-              );
-              loadTable(); // 重新加载表格以更新分页和行数
             }
           }
         }
@@ -998,34 +1069,54 @@
             };
 
             // 插入到数据库
-            const { data, error } = await supabase
-                .from('temu_workflow')
-                .insert([newRecord])
-                .select()
-                .single();
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/temu_workflow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newRecord)
+                });
 
-            if (error) {
-                console.error('创建新记录失败:', error.message);
-                Swal.fire('错误', '创建新记录失败: ' + error.message, 'error');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.error('创建新记录失败:', result.message);
+                    Swal.fire('错误', '创建新记录失败: ' + result.message, 'error');
+                    return;
+                }
+
+                // 创建成功后，刷新表格
+                await loadTable();
+                
+                // 显示成功消息并打开侧边栏进行编辑
+                Swal.fire({
+                    icon: 'success',
+                    title: '记录创建成功！',
+                    text: '请在右侧编辑面板中完善详细信息。',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                // 构造创建的记录对象用于侧边栏
+                const data = {
+                    id: result.id,
+                    ...newRecord
+                };
+
+                // 自动打开侧边栏编辑新创建的记录
+                setTimeout(() => {
+                    openDetailSidebarForRecord(data, shipmentId);
+                }, 500);
+            } catch (apiError) {
+                console.error('创建新记录失败:', apiError);
+                Swal.fire('错误', '创建新记录失败: ' + apiError.message, 'error');
                 return;
             }
-
-            // 创建成功后，刷新表格
-            await loadTable();
-            
-            // 显示成功消息并打开侧边栏进行编辑
-            Swal.fire({
-                icon: 'success',
-                title: '记录创建成功！',
-                text: '请在右侧编辑面板中完善详细信息。',
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            // 自动打开侧边栏编辑新创建的记录
-            setTimeout(() => {
-                openDetailSidebarForRecord(data, shipmentId);
-            }, 500);
 
         } catch (e) {
             console.error('创建新记录异常:', e);
